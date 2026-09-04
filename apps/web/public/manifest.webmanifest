@@ -1,0 +1,10 @@
+{
+  "name": "Noyala",
+  "short_name": "Noyala",
+  "description": "Remember the person, not just the date.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF8F4",
+  "theme_color": "#FBF8F4",
+  "icons": []
+}

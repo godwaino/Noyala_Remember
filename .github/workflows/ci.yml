@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version comes from package.json's "packageManager" field — passing
+      # `with: version:` too makes the action fail with "Multiple versions
+      # of pnpm specified".
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm -r typecheck
+
+      - run: pnpm -r lint
+
+      - run: pnpm -r test
+
+      - name: Build @noyala/web
+        run: pnpm --filter @noyala/web build
+        env:
+          # A production build must succeed without a real Supabase project
+          # connected — see apps/web/src/server/env.ts. This intentionally
+          # leaves the vars unset to prove that.
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      # Real RLS behaviour is verified against a live Supabase project as
+      # part of development (see docs/stage-reports/stage-1.md); this job
+      # re-checks it on every change using a minimal auth/roles shim so a
+      # future migration can't silently break tenant isolation.
+      - name: Apply auth/roles shim
+        run: psql -v ON_ERROR_STOP=1 -f scripts/ci/pg-auth-shim.sql
+
+      - name: Apply migrations
+        run: |
+          set -e
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f"
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Grant table privileges (mirrors Supabase project defaults)
+        run: psql -v ON_ERROR_STOP=1 -f scripts/ci/pg-grants.sql
+
+      - name: RLS isolation smoke test
+        run: bash scripts/ci/rls-smoke-test.sh
