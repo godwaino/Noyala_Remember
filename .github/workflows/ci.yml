@@ -83,3 +83,6 @@ jobs:
 
       - name: RLS isolation smoke test
         run: bash scripts/ci/rls-smoke-test.sh
+
+      - name: Outbox crash-recovery smoke test
+        run: bash scripts/ci/outbox-smoke-test.sh
