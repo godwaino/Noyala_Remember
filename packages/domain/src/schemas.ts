@@ -63,6 +63,12 @@ export const personInputSchema = z.object({
   email: z.string().trim().email("Enter a valid email address").optional().or(z.literal("")),
   pronouns: z.string().trim().max(40).optional().or(z.literal("")),
   notes: z.string().trim().max(4000).optional().or(z.literal("")),
+  // Empty string from a form select means "no cadence set" — never default
+  // to a value the user didn't choose.
+  reconnectCadenceDays: z
+    .union([z.number().int().positive().max(3650), z.null()])
+    .optional()
+    .transform((v) => v ?? null),
 });
 
 export type PersonInput = z.infer<typeof personInputSchema>;
@@ -120,3 +126,22 @@ export const memoryInputSchema = z.object({
 });
 
 export type MemoryInput = z.infer<typeof memoryInputSchema>;
+
+const INTERACTION_TYPES = ["call", "visit", "message", "meeting", "other"] as const;
+
+/** Keep in sync with the `interactions` migration's CHECK constraint. */
+export const interactionInputSchema = z.object({
+  type: z.enum(INTERACTION_TYPES),
+  occurredAt: z.string().trim().min(1, "Date is required"),
+  summary: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+
+export type InteractionInput = z.infer<typeof interactionInputSchema>;
+
+/** Keep in sync with the `follow_ups` migration's CHECK constraint. */
+export const followUpInputSchema = z.object({
+  description: z.string().trim().min(1, "Description is required").max(500),
+  dueAt: z.string().trim().max(10).optional().or(z.literal("")),
+});
+
+export type FollowUpInput = z.infer<typeof followUpInputSchema>;

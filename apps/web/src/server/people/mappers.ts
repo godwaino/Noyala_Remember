@@ -12,6 +12,8 @@ export interface PersonRow {
   email: string | null;
   pronouns: string | null;
   notes: string | null;
+  reconnect_cadence_days: number | null;
+  reconnect_snoozed_until: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
@@ -29,6 +31,8 @@ export function toPerson(row: PersonRow): Person {
     email: row.email,
     pronouns: row.pronouns,
     notes: row.notes,
+    reconnectCadenceDays: row.reconnect_cadence_days,
+    reconnectSnoozedUntil: row.reconnect_snoozed_until,
     archivedAt: row.archived_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

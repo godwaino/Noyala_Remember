@@ -13,6 +13,7 @@ export interface PersonFormState {
 }
 
 function parsePersonForm(formData: FormData) {
+  const cadenceRaw = formData.get("reconnectCadenceDays");
   return personInputSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName") || undefined,
@@ -22,6 +23,7 @@ function parsePersonForm(formData: FormData) {
     email: formData.get("email") || undefined,
     pronouns: formData.get("pronouns") || undefined,
     notes: formData.get("notes") || undefined,
+    reconnectCadenceDays: cadenceRaw && String(cadenceRaw).trim() !== "" ? Number(cadenceRaw) : null,
   });
 }
 
@@ -52,6 +54,7 @@ export async function createPerson(
       email: blankToNull(parsed.data.email),
       pronouns: blankToNull(parsed.data.pronouns),
       notes: blankToNull(parsed.data.notes),
+      reconnect_cadence_days: parsed.data.reconnectCadenceDays,
     })
     .select("id")
     .single();
@@ -87,6 +90,7 @@ export async function updatePerson(
       email: blankToNull(parsed.data.email),
       pronouns: blankToNull(parsed.data.pronouns),
       notes: blankToNull(parsed.data.notes),
+      reconnect_cadence_days: parsed.data.reconnectCadenceDays,
     })
     .eq("id", personId);
 
@@ -120,6 +124,20 @@ export async function restorePerson(personId: string): Promise<void> {
   if (error) reportError(error, { action: "restorePerson", personId });
   revalidatePath("/people");
   revalidatePath(`/people/${personId}`);
+}
+
+/** Snooze control for reconnect suggestions (Master Build Prompt §4).
+ * `days` is how many days from now to stay quiet — a plain date, no
+ * penalty or counter of any kind. */
+export async function snoozeReconnect(personId: string, days: number): Promise<void> {
+  const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("people")
+    .update({ reconnect_snoozed_until: until.toISOString().slice(0, 10) })
+    .eq("id", personId);
+  if (error) reportError(error, { action: "snoozeReconnect", personId });
+  revalidatePath("/");
 }
 
 export async function deletePerson(personId: string): Promise<void> {

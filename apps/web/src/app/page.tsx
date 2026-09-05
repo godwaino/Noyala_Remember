@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { brand } from "@noyala/brand";
+import { bucketFollowUp, sortFollowUpsForDisplay } from "@noyala/domain";
 import { EmptyState } from "@/components/EmptyState";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { reportError } from "@/server/observability/error-monitoring";
 import { listUpcomingDatesForUser } from "@/server/important-dates/queries";
 import { resolveUpcomingDates } from "@/server/important-dates/upcoming";
 import { UpcomingDateGroups } from "@/components/UpcomingDateGroups";
+import { listReconnectSuggestions } from "@/server/relationship-care/queries";
+import { listOpenFollowUpsForUser } from "@/server/follow-ups/queries";
+import { snoozeReconnect } from "@/server/people/actions";
+import { completeFollowUp, dismissFollowUp } from "@/server/follow-ups/actions";
 
 export default async function HomePage() {
   let user;
@@ -41,9 +46,21 @@ export default async function HomePage() {
     );
   }
 
-  const upcoming = await listUpcomingDatesForUser(supabase);
-  const resolved = resolveUpcomingDates(upcoming, new Date());
+  const now = new Date();
+  const [upcoming, reconnectSuggestions, openFollowUps] = await Promise.all([
+    listUpcomingDatesForUser(supabase),
+    listReconnectSuggestions(supabase, now),
+    listOpenFollowUpsForUser(supabase),
+  ]);
+  const resolved = resolveUpcomingDates(upcoming, now);
   const next = resolved[0];
+  const sortedFollowUps = sortFollowUpsForDisplay(
+    openFollowUps.map((f) => ({
+      ...f,
+      dueAt: f.followUp.dueAt ? new Date(f.followUp.dueAt) : null,
+    })),
+    now,
+  ).filter((f) => bucketFollowUp(f.dueAt, now) !== "later");
 
   return (
     <div>
@@ -77,6 +94,82 @@ export default async function HomePage() {
           />
         </div>
       )}
+
+      {reconnectSuggestions.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-ink font-semibold">Reconnect</h2>
+          <p className="text-ink-muted mt-1 text-sm">
+            People you asked to hear about — never a score, just a plain reminder.
+          </p>
+          <ul className="border-border divide-border mt-3 divide-y rounded-lg border">
+            {reconnectSuggestions.map(({ person, daysSinceLastInteraction }) => (
+              <li key={person.id} className="flex items-center justify-between gap-4 p-4">
+                <div>
+                  <Link href={`/people/${person.id}`} className="text-ink text-sm font-medium hover:underline">
+                    {person.firstName}
+                  </Link>
+                  <p className="text-ink-muted text-xs">
+                    {daysSinceLastInteraction === null
+                      ? "No interaction logged yet"
+                      : `Last contact ${daysSinceLastInteraction} day${daysSinceLastInteraction === 1 ? "" : "s"} ago`}
+                    {" · "}
+                    every {person.reconnectCadenceDays} days
+                  </p>
+                </div>
+                <form action={snoozeReconnect.bind(null, person.id, 14)}>
+                  <button
+                    type="submit"
+                    className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                  >
+                    Snooze 2 weeks
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {sortedFollowUps.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-ink font-semibold">Follow-ups due</h2>
+          <ul className="border-border divide-border mt-3 divide-y rounded-lg border">
+            {sortedFollowUps.map(({ followUp, personFirstName }) => (
+              <li key={followUp.id} className="flex items-center justify-between gap-4 p-4">
+                <div>
+                  <p className="text-ink text-sm">{followUp.description}</p>
+                  <p className="text-ink-muted text-xs">
+                    <Link href={`/people/${followUp.personId}`} className="hover:underline">
+                      {personFirstName}
+                    </Link>
+                    {followUp.dueAt
+                      ? ` · due ${new Date(followUp.dueAt).toLocaleDateString()}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <form action={completeFollowUp.bind(null, followUp.personId, followUp.id)}>
+                    <button
+                      type="submit"
+                      className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                    >
+                      Done
+                    </button>
+                  </form>
+                  <form action={dismissFollowUp.bind(null, followUp.personId, followUp.id)}>
+                    <button
+                      type="submit"
+                      className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                    >
+                      Dismiss
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mt-6">
         <UpcomingDateGroups dates={resolved} />
