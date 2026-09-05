@@ -4,17 +4,18 @@ import { brand } from "@noyala/brand";
 import { EmptyState } from "@/components/EmptyState";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { reportError } from "@/server/observability/error-monitoring";
+import { listUpcomingDatesForUser } from "@/server/important-dates/queries";
+import { resolveUpcomingDates } from "@/server/important-dates/upcoming";
+import { UpcomingDateGroups } from "@/components/UpcomingDateGroups";
 
 export default async function HomePage() {
   let user;
+  let supabase;
   try {
-    const supabase = await getSupabaseServerClient();
+    supabase = await getSupabaseServerClient();
     const result = await supabase.auth.getUser();
     user = result.data.user;
   } catch (error) {
-    // Next's own dynamic-rendering bailout (triggered by cookies() during a
-    // static-generation attempt) surfaces as a thrown error here too; let
-    // it propagate instead of misreporting it as a config problem.
     unstable_rethrow(error);
     reportError(error, { page: "home" });
     return (
@@ -40,14 +41,45 @@ export default async function HomePage() {
     );
   }
 
+  const upcoming = await listUpcomingDatesForUser(supabase);
+  const resolved = resolveUpcomingDates(upcoming, new Date());
+  const next = resolved[0];
+
   return (
     <div>
-      <h1 className="text-xl font-semibold">Welcome back</h1>
-      <div className="mt-4">
-        <EmptyState
-          title="Your dashboard is coming soon"
-          description="People, important dates and reminders land in the next build stage. If you haven't finished setup yet, visit Settings to complete onboarding."
-        />
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold">Home</h1>
+        <Link
+          href="/people/new"
+          className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
+        >
+          Add person
+        </Link>
+      </div>
+
+      {next ? (
+        <div className="border-border bg-surface mt-4 rounded-lg border p-4">
+          <p className="text-ink-muted text-xs uppercase tracking-wide">Next up</p>
+          <p className="text-ink mt-1 font-medium">
+            {next.date.label} for {next.personFirstName}
+          </p>
+          <p className="text-ink-muted text-sm">
+            {next.daysUntil === 0
+              ? "Today"
+              : `In ${next.daysUntil} day${next.daysUntil === 1 ? "" : "s"}`}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <EmptyState
+            title="No upcoming dates yet"
+            description="Add a person and their birthday to see it here."
+          />
+        </div>
+      )}
+
+      <div className="mt-6">
+        <UpcomingDateGroups dates={resolved} />
       </div>
     </div>
   );

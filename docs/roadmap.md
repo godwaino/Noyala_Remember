@@ -8,7 +8,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | --- | --- | --- | --- |
 | 0 | Discovery, brand foundation, implementation baseline | Done | `docs/stage-reports/stage-0.md` |
 | 1 | Production foundation | Done (with documented blockers) | `docs/stage-reports/stage-1.md` |
-| 2 | Relationship core | Not started | — |
+| 2 | Relationship core | In progress | `docs/stage-reports/stage-2.md` |
 | 3 | Communication intelligence | Not started | — |
 | 4 | Connected contacts and communication | Not started | — |
 | 5 | Relationship care | Not started | — |
@@ -35,6 +35,20 @@ output, or an explicit documented blocker), not when code merely exists.
 - Stage 8 (billing/admin) can start once Stage 1's provider-adapter pattern
   and Stage 2's entitlement-relevant data exist; it does not block 2–7.
 - Stage 9 (scale/launch) is a hardening pass over everything built in 0–8.
+
+## Stage 2 remaining work
+
+People/dates/memories CRUD, Home/Calendar, CSV/vCard export and
+delete-person/account are done and verified (see stage report). Still
+open before Stage 2's exit gate is fully met:
+
+- Email and web-push reminder adapters, the reminder-discovery scheduled
+  job, and delivery-history UI. The domain logic they need
+  (`isInReminderWindow`, the Stage 1 outbox) already exists.
+- Offline-tolerant PWA behaviour for read/capture paths (no service worker
+  yet).
+- A real keyboard-navigation/screen-reader pass — today's forms have
+  labels and focus-visible styling, but nothing formal has verified it.
 
 ## Known blockers (do not silently skip; re-check each stage)
 
