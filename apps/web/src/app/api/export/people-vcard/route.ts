@@ -10,7 +10,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const people = await listPeople(supabase, { includeArchived: true });
+  const people = await listPeople(supabase, user.id, { includeArchived: true });
   const vcf = toVCardCollection(
     people.map((p) => ({
       firstName: p.firstName,

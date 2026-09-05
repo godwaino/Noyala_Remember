@@ -69,6 +69,8 @@ export const personInputSchema = z.object({
     .union([z.number().int().positive().max(3650), z.null()])
     .optional()
     .transform((v) => v ?? null),
+  giftPreferences: z.string().trim().max(2000).optional().or(z.literal("")),
+  giftExclusions: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 export type PersonInput = z.infer<typeof personInputSchema>;
@@ -145,3 +147,59 @@ export const followUpInputSchema = z.object({
 });
 
 export type FollowUpInput = z.infer<typeof followUpInputSchema>;
+
+/** Keep in sync with the `circles` migration's CHECK constraint. */
+export const circleInputSchema = z.object({
+  name: z.string().trim().min(1, "Circle name is required").max(120),
+});
+
+export type CircleInput = z.infer<typeof circleInputSchema>;
+
+/** Keep in sync with the `circle_invitations` migration's CHECK constraint. */
+export const circleInvitationInputSchema = z.object({
+  invitedEmail: z.string().trim().email("Enter a valid email address"),
+  role: z.enum(["organiser", "viewer"]),
+});
+
+export type CircleInvitationInput = z.infer<typeof circleInvitationInputSchema>;
+
+/** Keep in sync with the `person_shares` migration's defaults. */
+export const personShareInputSchema = z.object({
+  personId: z.string().uuid(),
+  circleId: z.string().uuid(),
+  shareMemories: z.boolean().default(false),
+  shareGiftPlanning: z.boolean().default(true),
+});
+
+export type PersonShareInput = z.infer<typeof personShareInputSchema>;
+
+/** Keep in sync with the `gift_ideas` migration's CHECK constraints. */
+export const giftIdeaInputSchema = z
+  .object({
+    personId: z.string().uuid(),
+    circleId: z.string().uuid(),
+    title: z.string().trim().min(1, "Title is required").max(200),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    occasion: z.string().trim().max(120).optional().or(z.literal("")),
+    // Empty string from a form field means "no budget set" — the
+    // amount/currency pairing constraint on the table requires both or
+    // neither, so the schema mirrors that here.
+    budgetAmount: z
+      .union([z.number().nonnegative().max(9_999_999.99), z.null()])
+      .optional()
+      .transform((v) => v ?? null),
+    budgetCurrency: z
+      .union([z.string().trim().length(3), z.null()])
+      .optional()
+      .transform((v) => v ?? null),
+    deadlineAt: z.string().trim().max(10).optional().or(z.literal("")),
+    linkUrl: z.string().trim().url("Enter a valid URL").optional().or(z.literal("")),
+  })
+  .refine((v) => (v.budgetAmount === null) === (v.budgetCurrency === null), {
+    message: "A budget needs both an amount and a currency",
+    path: ["budgetCurrency"],
+  });
+
+export type GiftIdeaInput = z.infer<typeof giftIdeaInputSchema>;
+
+export const giftIdeaStatusSchema = z.enum(["idea", "planned", "purchased", "given"]);

@@ -24,6 +24,8 @@ function parsePersonForm(formData: FormData) {
     pronouns: formData.get("pronouns") || undefined,
     notes: formData.get("notes") || undefined,
     reconnectCadenceDays: cadenceRaw && String(cadenceRaw).trim() !== "" ? Number(cadenceRaw) : null,
+    giftPreferences: formData.get("giftPreferences") || undefined,
+    giftExclusions: formData.get("giftExclusions") || undefined,
   });
 }
 
@@ -55,6 +57,8 @@ export async function createPerson(
       pronouns: blankToNull(parsed.data.pronouns),
       notes: blankToNull(parsed.data.notes),
       reconnect_cadence_days: parsed.data.reconnectCadenceDays,
+      gift_preferences: blankToNull(parsed.data.giftPreferences),
+      gift_exclusions: blankToNull(parsed.data.giftExclusions),
     })
     .select("id")
     .single();
@@ -91,6 +95,8 @@ export async function updatePerson(
       pronouns: blankToNull(parsed.data.pronouns),
       notes: blankToNull(parsed.data.notes),
       reconnect_cadence_days: parsed.data.reconnectCadenceDays,
+      gift_preferences: blankToNull(parsed.data.giftPreferences),
+      gift_exclusions: blankToNull(parsed.data.giftExclusions),
     })
     .eq("id", personId);
 

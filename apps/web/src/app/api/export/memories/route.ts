@@ -10,7 +10,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const memories = await listAllMemoriesForUser(supabase);
+  const memories = await listAllMemoriesForUser(supabase, user.id);
   const csv = toCsv(
     ["person", "content", "category", "sensitivity", "occurred_on", "archived"],
     memories.map(({ memory, personFirstName }) => [

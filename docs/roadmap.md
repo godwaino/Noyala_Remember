@@ -12,7 +12,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 3 | Communication intelligence | Done (OpenAI adapter unverified — no key) | `docs/stage-reports/stage-3.md` |
 | 4 | Connected contacts and communication | Partial — CSV/vCard import + device picker done, cloud OAuth and direct/scheduled send blocked on credentials | `docs/stage-reports/stage-4.md` |
 | 5 | Relationship care | Done | `docs/stage-reports/stage-5.md` |
-| 6 | Shared circles and gifting | Not started | — |
+| 6 | Shared circles and gifting | Done | `docs/stage-reports/stage-6.md` |
 | 7 | Native mobile and voice capture | Not started | — |
 | 8 | Commercial platform and administration | Not started | — |
 | 9 | Scale, localisation and launch readiness | Not started | — |
@@ -181,6 +181,41 @@ would need `notification_deliveries.important_date_id`'s NOT NULL FK
 either relaxed or extended to a polymorphic reference — a real schema
 change, deliberately not made speculatively this round. If that's wanted,
 it's a small, well-scoped follow-up.
+
+## Stage 6 remaining work
+
+Circles (create/invite/accept/decline/revoke/leave/remove), person sharing
+with field-aware flags (`share_memories`, `share_gift_planning`), and
+collaborative gift planning with surprise-mode hiding are all done and
+verified live against the real Supabase project — see
+`docs/stage-reports/stage-6.md` for the full policy-level test log. A real
+bug (self-referential RLS recursion on `circle_members`) was found and
+fixed during that verification, not just during code review — see
+`docs/decisions/0011-circle-membership-rls-recursion.md`.
+
+**Known scope decisions, not gaps:**
+- `gift_ideas` is a single table with an inline status lifecycle
+  (idea → planned → purchased → given), not the Master Build Prompt's
+  three-table `gift_ideas`/`gifts`/`gift_collaborators` split. A `given`
+  row doubles as the past-gift history entry the prompt asks for.
+  `gift_collaborators` (multi-person cost-splitting on one gift) is a
+  well-scoped follow-up if ever wanted — nothing in the current schema
+  blocks adding it later.
+- No merchant/affiliate adapter exists. The exit gate only requires
+  "gifting remains useful without a merchant integration," which it is;
+  building an adapter with no real provider to integrate would be
+  speculative scope.
+- Invitation **expiry** (the Master Build Prompt's exit-gate wording) is
+  implemented as explicit owner/organiser **revocation** rather than a
+  time-based TTL — there's no `expires_at` column. Revocation is verified
+  live (a revoked invitation's token can never be accepted, even mid-flight
+  after being fetched). A calendar-time expiry would be a small additive
+  migration (one nullable timestamp + one extra `accept_circle_invitation`
+  check) if wanted later.
+- Role **changes** are revoke-and-reinvite, not in-place editing — verified
+  live that a direct `UPDATE circle_members SET role = ...` by anyone,
+  including the owner, affects zero rows. `docs/permissions.md` records
+  this as a deliberate simplification, not an oversight.
 
 ## Known blockers (do not silently skip; re-check each stage)
 

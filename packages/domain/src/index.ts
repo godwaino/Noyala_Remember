@@ -10,3 +10,5 @@ export * from "./messages";
 export * from "./contact-import";
 export * from "./device-contacts";
 export * from "./relationship-care";
+export * from "./circles";
+export * from "./gift-planning";

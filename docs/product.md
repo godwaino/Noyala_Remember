@@ -47,6 +47,15 @@ statement, always explainable, always dismissible/snoozable, and only ever
 shown to the user about their own contacts (never compared across people
 or shared).
 
+Stage 6's shared circles and gifting (`docs/stage-reports/stage-6.md`)
+are where "exposing private notes to ... other circle members by default"
+gets tested: a memory is never visible to a circle member unless it is
+both `sensitivity = 'standard'` (hardcoded, not just the default) and the
+person's owner has explicitly turned sharing on for that circle — verified
+live, not just by code inspection. Gift planning never receives memory
+content at all, and there is no merchant/affiliate integration to leak
+anything to in the first place.
+
 ## Sending / approval policy (non-negotiable)
 
 - Silent autonomous personal messaging is prohibited.

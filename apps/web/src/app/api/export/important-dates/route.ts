@@ -10,7 +10,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const dates = await listAllImportantDatesForUser(supabase);
+  const dates = await listAllImportantDatesForUser(supabase, user.id);
   const csv = toCsv(
     ["person", "type", "label", "month", "day", "year", "recurs_annually", "timezone"],
     dates.map(({ date, personFirstName }) => [

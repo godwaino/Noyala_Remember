@@ -112,6 +112,29 @@ export function PersonForm({
         />
       </Field>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Gift preferences" htmlFor="giftPreferences">
+          <textarea
+            id="giftPreferences"
+            name="giftPreferences"
+            rows={3}
+            placeholder="Sizes, interests, favourites…"
+            defaultValue={defaultValues?.giftPreferences ?? ""}
+            className="border-border rounded-md border px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="Gift exclusions" htmlFor="giftExclusions">
+          <textarea
+            id="giftExclusions"
+            name="giftExclusions"
+            rows={3}
+            placeholder="Allergies, already owns, dislikes…"
+            defaultValue={defaultValues?.giftExclusions ?? ""}
+            className="border-border rounded-md border px-3 py-2 text-sm"
+          />
+        </Field>
+      </div>
+
       <button
         type="submit"
         disabled={isPending}

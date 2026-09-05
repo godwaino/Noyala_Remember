@@ -10,15 +10,20 @@ export interface ListPeopleFilters {
 }
 
 /**
- * RLS scopes this to the caller's own people automatically — `client` must
- * be a session-bound client (getSupabaseServerClient), never the
- * service-role client, for this to mean anything.
+ * The caller's own people only — explicitly scoped by user_id, not left to
+ * RLS alone. Since Stage 6, RLS also makes a *shared* person visible to
+ * circle members (see person_shares_via_circle policies), which this list
+ * must not include: "your people" and "people shared with you" are
+ * different views (the latter lives on each circle's page instead).
+ * `client` must be a session-bound client (getSupabaseServerClient), never
+ * the service-role client.
  */
 export async function listPeople(
   client: SupabaseClient,
+  ownerUserId: string,
   filters: ListPeopleFilters = {},
 ): Promise<Person[]> {
-  let query = client.from("people").select("*");
+  let query = client.from("people").select("*").eq("user_id", ownerUserId);
 
   if (!filters.includeArchived) {
     query = query.is("archived_at", null);

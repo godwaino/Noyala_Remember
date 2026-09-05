@@ -33,25 +33,55 @@ so such a row cannot exist even if application code had a bug. Verified
 live by attempting exactly that cross-reference against the seeded test
 users — see `docs/stage-reports/stage-1.md` and `stage-2.md`.
 
-## Not yet built — filled in when each stage lands
+## Stage 6: shared circles and gifting
 
-**Stage 6 (shared circles):** needs its own view here before any
-migration is written, covering at minimum:
-- Roles: owner, organiser, viewer (Master Build Prompt §11).
-- Per-person, per-field sharing grants — RLS governs *rows*; field-level
-  sharing needs either a separate "shared fields" projection/view the
-  RLS-visible role can query, or column-level grants combined with a
-  view, decided before `person_shares` is migrated. A flat "shared = true"
-  boolean on `people` would not satisfy "sensitive memories are never
-  shared by default."
-- Whether "edit" and "share" are ever separable for a non-owner (the
-  product doc doesn't require collaborative editing, only shared
-  visibility plus collaborative gift planning).
-- Surprise-gift visibility: the gift recipient, if also a circle member,
-  must never see gifts about themselves — a filter on the *viewing user*,
-  not just the record owner, so `gifts`/`gift_ideas` RLS needs a
-  `recipient_person_id <> current viewer's linked person` condition once
-  circle members can be mapped to a `person` row.
+Built and verified live against the real Supabase project — see
+`docs/stage-reports/stage-6.md` for the full test log. The design
+questions this section used to pose (before any migration existed) are
+answered here as implemented, not as intent.
+
+**Roles** (Master Build Prompt §11): `owner`, `organiser`, `viewer` on
+`circle_members`. Role is fixed at invitation time; there is no in-place
+role-change RLS path — verified live that a direct `UPDATE
+circle_members SET role = ...` affects zero rows even for the circle
+owner. Changing someone's role is revoke-and-reinvite by design.
+
+| Resource | View | Edit/Manage | Notes |
+| --- | --- | --- | --- |
+| `circles` | Owner, or any accepted member | Owner only (rename/delete) | Member visibility via `is_circle_member()` — see the RLS-recursion note below |
+| `circle_members` | Owner, or any accepted member (peer visibility) | Self (own row, e.g. `linked_person_id`); owner can remove anyone; anyone can remove themselves (leave) | No role-change path at all |
+| `circle_invitations` | Owner/organiser of the circle; the invitee (by email) | Owner/organiser send/revoke; invitee can decline | **Accepting** never goes through a plain RLS-authorized UPDATE — only `accept_circle_invitation()` (SECURITY DEFINER) can move a row to `accepted`, so a member row can never exist without a matching accepted invitation |
+| `person_shares` | Owner of the person; any member of the target circle | Owner/organiser only may create a share; only the sharing owner may change flags or revoke | Circle-scoped, not per-member: sharing a person makes them visible to every accepted member of that circle |
+| `people` (shared) | Any member of a circle the person is actively shared into | View only — no edit/delete path exists for a non-owner | Additive RLS policy, the existing owner-only policy is untouched |
+| `important_dates` (shared) | Same as `people` — sharing a person always includes their dates | View only | Dates carry no separate share flag; they aren't the "private notes" the exclusion list is about |
+| `memories` (shared) | Same as `people`, **and** only when `sensitivity = 'standard'` **and** the share's `share_memories = true` | View only | Both conditions are hardcoded in the RLS `USING` clause — a sensitive memory is never visible to a circle member no matter how the share is configured. Verified live: turning `share_memories` on exposes exactly the standard memory, never the sensitive one. |
+| `gift_ideas` | Any member of the circle the person is shared into, with `share_gift_planning = true`, **except** the member whose own `linked_person_id` is that gift's recipient | Any qualifying member may create/update (collaborative); delete is creator or circle owner/organiser | The recipient-exclusion applies unconditionally, not as an opt-in — verified live that the linked member sees zero rows for gifts about themselves while every other qualifying member sees them |
+
+**Edit vs. share for a non-owner:** not separable — a non-owner circle
+member gets view (plus gift planning, which is deliberately open to every
+role) and nothing else. There is no server-enforced path for a
+shared-with viewer/organiser to edit a person's own fields, dates, or
+memories; only gift-idea rows are writable by non-owners.
+
+**Surprise-gift visibility**: `circle_members.linked_person_id` lets a
+member self-identify "this shared person record is me." `gift_ideas`
+RLS then excludes any row whose `person_id` matches the *viewing* member's
+own `linked_person_id` for that circle — a condition on the viewer, not
+the record owner, exactly as this section originally called for.
+
+**A real RLS bug found by live testing, not code review**: the first
+version of `circle_members`'s own "peer visibility" policy queried
+`circle_members` from within its own policy body. Postgres does not
+reliably short-circuit self-referential RLS subqueries — it re-evaluates
+the full OR'd policy set on every nested scan of the same table — so this
+produced "infinite recursion detected in policy" (42P17) on every insert
+or select touching the table. Fixed with a `SECURITY DEFINER` helper
+function (`is_circle_member`), the same pattern already used for
+`claim_outbox_job`/`accept_circle_invitation`, which bypasses the table's
+own RLS instead of recursing into it. See
+`docs/decisions/0011-circle-membership-rls-recursion.md`.
+
+## Not yet built — filled in when each stage lands
 
 **Stage 4 (contact sync) / Stage 8 (billing/admin):** support-staff and
 integration-service access levels (Master Build Prompt §14: "Support

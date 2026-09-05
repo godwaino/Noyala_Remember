@@ -14,10 +14,11 @@ export interface ReconnectSuggestion {
  * stored; this is just a filter + sort over plain facts. */
 export async function listReconnectSuggestions(
   client: SupabaseClient,
+  ownerUserId: string,
   now: Date,
 ): Promise<ReconnectSuggestion[]> {
   const [people, lastInteractionByPerson] = await Promise.all([
-    listPeople(client),
+    listPeople(client, ownerUserId),
     listLastInteractionByPerson(client),
   ]);
 
