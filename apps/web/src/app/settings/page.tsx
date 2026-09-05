@@ -7,7 +7,9 @@ import { reportError } from "@/server/observability/error-monitoring";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 import { PushSubscribeButton } from "@/components/PushSubscribeButton";
 import { NotificationDeliveryList } from "@/components/NotificationDeliveryList";
+import { NotificationPreferencesForm } from "@/components/NotificationPreferencesForm";
 import { listNotificationDeliveries } from "@/server/notifications/queries";
+import { getProfile } from "@/server/profile/queries";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -55,15 +57,15 @@ export default async function SettingsPage() {
     );
   }
 
-  const deliveries = await listNotificationDeliveries(supabase!);
+  const [deliveries, profile] = await Promise.all([
+    listNotificationDeliveries(supabase!),
+    getProfile(supabase!),
+  ]);
 
   return (
     <div>
       <h1 className="text-xl font-semibold">Settings</h1>
       <p className="text-ink-muted mt-2 text-sm">Signed in as {email}.</p>
-      <p className="text-ink-muted mt-4 text-sm">
-        Reminder preferences and tone defaults arrive in later build stages.
-      </p>
       <form action={signOut} className="mt-6">
         <button
           type="submit"
@@ -74,12 +76,25 @@ export default async function SettingsPage() {
       </form>
 
       <section className="border-border mt-10 border-t pt-6">
-        <h2 className="text-ink font-semibold">Reminders</h2>
+        <h2 className="text-ink font-semibold">Notifications</h2>
         <p className="text-ink-muted mt-1 text-sm">
-          Push notifications for upcoming dates, delivered by your browser.
+          Choose how and when you want to hear about upcoming dates.
         </p>
-        <div className="mt-3">
-          <PushSubscribeButton vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        {profile ? (
+          <NotificationPreferencesForm profile={profile} />
+        ) : (
+          <p className="text-ink-muted mt-3 text-sm">
+            Finish <Link href="/onboarding" className="text-primary underline">setup</Link> to set
+            notification preferences.
+          </p>
+        )}
+        <div className="border-border mt-6 border-t pt-6">
+          <p className="text-ink-muted text-sm">
+            Push notifications for upcoming dates, delivered by your browser.
+          </p>
+          <div className="mt-3">
+            <PushSubscribeButton vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+          </div>
         </div>
         <div className="mt-6">
           <NotificationDeliveryList deliveries={deliveries} />

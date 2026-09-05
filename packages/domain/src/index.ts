@@ -7,3 +7,5 @@ export * from "./vcard";
 export * from "./reminders";
 export * from "./notifications";
 export * from "./messages";
+export * from "./contact-import";
+export * from "./device-contacts";
