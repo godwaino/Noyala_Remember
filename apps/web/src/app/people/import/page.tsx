@@ -14,7 +14,7 @@ export default async function ImportPeoplePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const people = await listPeople(supabase, { includeArchived: true });
+  const people = await listPeople(supabase, user.id, { includeArchived: true });
   const existingPeople = people.map((p) => ({
     id: p.id,
     firstName: p.firstName,

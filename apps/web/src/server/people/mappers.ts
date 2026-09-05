@@ -14,6 +14,8 @@ export interface PersonRow {
   notes: string | null;
   reconnect_cadence_days: number | null;
   reconnect_snoozed_until: string | null;
+  gift_preferences: string | null;
+  gift_exclusions: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
@@ -33,6 +35,8 @@ export function toPerson(row: PersonRow): Person {
     notes: row.notes,
     reconnectCadenceDays: row.reconnect_cadence_days,
     reconnectSnoozedUntil: row.reconnect_snoozed_until,
+    giftPreferences: row.gift_preferences,
+    giftExclusions: row.gift_exclusions,
     archivedAt: row.archived_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -27,7 +27,7 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     : undefined;
   const includeArchived = archived === "1";
 
-  const people = await listPeople(supabase, { search: q, relationshipType, includeArchived });
+  const people = await listPeople(supabase, user.id, { search: q, relationshipType, includeArchived });
 
   return (
     <div>

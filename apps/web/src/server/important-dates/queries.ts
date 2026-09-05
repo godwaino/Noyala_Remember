@@ -35,13 +35,20 @@ export interface ImportantDateWithPerson {
   personFirstName: string;
 }
 
-/** Every important date for the signed-in user's non-archived people. */
+/**
+ * Every important date for the signed-in user's own non-archived people.
+ * Explicitly scoped by user_id, not left to RLS alone: since Stage 6, RLS
+ * also allows reading a *shared* person's dates (person_shares), which
+ * this dashboard/export query must not mix in with the user's own.
+ */
 export async function listUpcomingDatesForUser(
   client: SupabaseClient,
+  ownerUserId: string,
 ): Promise<ImportantDateWithPerson[]> {
   const { data, error } = await client
     .from("important_dates")
     .select("*, people!inner(first_name, archived_at)")
+    .eq("user_id", ownerUserId)
     .is("people.archived_at", null);
   if (error) throw new Error(`Failed to list upcoming dates: ${error.message}`);
 
@@ -54,8 +61,12 @@ export async function listUpcomingDatesForUser(
 /** Every important date for every person the user owns, archived or not — for data export. */
 export async function listAllImportantDatesForUser(
   client: SupabaseClient,
+  ownerUserId: string,
 ): Promise<ImportantDateWithPerson[]> {
-  const { data, error } = await client.from("important_dates").select("*, people(first_name)");
+  const { data, error } = await client
+    .from("important_dates")
+    .select("*, people(first_name)")
+    .eq("user_id", ownerUserId);
   if (error) throw new Error(`Failed to export important dates: ${error.message}`);
 
   return (data as (ImportantDateRow & { people: { first_name: string } })[]).map((row) => ({

@@ -27,9 +27,20 @@ export interface MemoryWithPerson {
   personFirstName: string;
 }
 
-/** Every memory for every person the user owns, archived or not — for data export. */
-export async function listAllMemoriesForUser(client: SupabaseClient): Promise<MemoryWithPerson[]> {
-  const { data, error } = await client.from("memories").select("*, people(first_name)");
+/**
+ * Every memory for every person the user owns, archived or not — for data
+ * export. Explicitly scoped by user_id: since Stage 6, RLS also allows
+ * reading a shared standard memory (person_shares.share_memories), which
+ * this export of the user's *own* authored memories must not include.
+ */
+export async function listAllMemoriesForUser(
+  client: SupabaseClient,
+  ownerUserId: string,
+): Promise<MemoryWithPerson[]> {
+  const { data, error } = await client
+    .from("memories")
+    .select("*, people(first_name)")
+    .eq("user_id", ownerUserId);
   if (error) throw new Error(`Failed to export memories: ${error.message}`);
 
   return (data as (MemoryRow & { people: { first_name: string } })[]).map((row) => ({

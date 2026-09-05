@@ -15,7 +15,7 @@ export default async function CalendarPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const upcoming = await listUpcomingDatesForUser(supabase);
+  const upcoming = await listUpcomingDatesForUser(supabase, user.id);
   const resolved = resolveUpcomingDates(upcoming, new Date());
 
   return (

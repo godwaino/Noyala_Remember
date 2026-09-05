@@ -48,8 +48,8 @@ export default async function HomePage() {
 
   const now = new Date();
   const [upcoming, reconnectSuggestions, openFollowUps] = await Promise.all([
-    listUpcomingDatesForUser(supabase),
-    listReconnectSuggestions(supabase, now),
+    listUpcomingDatesForUser(supabase, user.id),
+    listReconnectSuggestions(supabase, user.id, now),
     listOpenFollowUpsForUser(supabase),
   ]);
   const resolved = resolveUpcomingDates(upcoming, now);

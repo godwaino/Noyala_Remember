@@ -66,6 +66,9 @@ export interface Person {
   /** A user-chosen "don't suggest reconnecting before this date" — the
    * snooze control Master Build Prompt §4 asks for. */
   reconnectSnoozedUntil: string | null;
+  /** Durable gift context (Stage 6) — not per gift idea. */
+  giftPreferences: string | null;
+  giftExclusions: string | null;
   archivedAt: ISODateTime | null;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
@@ -206,4 +209,73 @@ export interface Consent {
   consentType: ConsentType;
   grantedAt: ISODateTime;
   withdrawnAt: ISODateTime | null;
+}
+
+/** Stage 6: shared circles and gifting. See docs/permissions.md. */
+export type CircleRole = "owner" | "organiser" | "viewer";
+
+export interface Circle {
+  id: UUID;
+  ownerUserId: UUID;
+  name: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export interface CircleMember {
+  id: UUID;
+  circleId: UUID;
+  userId: UUID;
+  role: CircleRole;
+  /** Which person-record (in any member's own people list) represents this
+   * member, so surprise gifts about them can be hidden from their own
+   * view. Null until the member self-identifies. */
+  linkedPersonId: UUID | null;
+  createdAt: ISODateTime;
+}
+
+export type CircleInvitationStatus = "pending" | "accepted" | "declined" | "revoked";
+
+export interface CircleInvitation {
+  id: UUID;
+  circleId: UUID;
+  invitedEmail: string;
+  invitedByUserId: UUID;
+  role: Exclude<CircleRole, "owner">;
+  token: UUID;
+  status: CircleInvitationStatus;
+  createdAt: ISODateTime;
+  respondedAt: ISODateTime | null;
+}
+
+export interface PersonShare {
+  id: UUID;
+  ownerUserId: UUID;
+  personId: UUID;
+  circleId: UUID;
+  shareMemories: boolean;
+  shareGiftPlanning: boolean;
+  createdAt: ISODateTime;
+  revokedAt: ISODateTime | null;
+}
+
+export type GiftIdeaStatus = "idea" | "planned" | "purchased" | "given";
+
+export interface GiftIdea {
+  id: UUID;
+  circleId: UUID;
+  personId: UUID;
+  createdByUserId: UUID;
+  title: string;
+  description: string | null;
+  occasion: string | null;
+  budgetAmount: number | null;
+  /** ISO 4217, e.g. "GBP". Null exactly when budgetAmount is null. */
+  budgetCurrency: string | null;
+  deadlineAt: ISODateTime | null;
+  linkUrl: string | null;
+  status: GiftIdeaStatus;
+  claimedByUserId: UUID | null;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
 }
