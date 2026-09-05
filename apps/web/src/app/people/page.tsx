@@ -33,12 +33,20 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">People</h1>
-        <Link
-          href="/people/new"
-          className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
-        >
-          Add person
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/people/import"
+            className="border-border rounded-md border px-4 py-2 text-sm font-medium"
+          >
+            Import
+          </Link>
+          <Link
+            href="/people/new"
+            className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
+          >
+            Add person
+          </Link>
+        </div>
       </div>
 
       <form method="get" className="mt-4 flex flex-wrap items-end gap-3">

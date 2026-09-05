@@ -10,7 +10,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 1 | Production foundation | Done (with documented blockers) | `docs/stage-reports/stage-1.md` |
 | 2 | Relationship core | Done (informal accessibility pass only) | `docs/stage-reports/stage-2.md` |
 | 3 | Communication intelligence | Done (OpenAI adapter unverified — no key) | `docs/stage-reports/stage-3.md` |
-| 4 | Connected contacts and communication | Not started | — |
+| 4 | Connected contacts and communication | Partial — CSV/vCard import + device picker done, cloud OAuth and direct/scheduled send blocked on credentials | `docs/stage-reports/stage-4.md` |
 | 5 | Relationship care | Not started | — |
 | 6 | Shared circles and gifting | Not started | — |
 | 7 | Native mobile and voice capture | Not started | — |
@@ -127,6 +127,37 @@ open; the one real gap is that the OpenAI adapter has never been exercised
 against the real API (no key in this environment) — see "Known blockers"
 below.
 
+## Stage 4 remaining work
+
+Done and verified: CSV/vCard import with preview, field mapping, duplicate
+review and an undo window; a device-contact adapter contract with a real
+(if narrowly-supported) browser Contact Picker implementation; an editable
+notification preference centre on `/settings`. See `docs/stage-reports/stage-4.md`.
+
+Genuinely blocked, not skipped:
+
+- **Cloud contact providers (Google/Apple/Microsoft)** — need real OAuth
+  app registrations (client id/secret, approved redirect URIs) with each
+  provider, which this environment cannot create. Only a contract could be
+  written here without one line of it ever being exercisable, so nothing
+  was written — per the Master Build Prompt's own instruction to "define
+  contracts and migrations incrementally rather than creating unused
+  speculative tables," a `contact_sources`/`contact_sync_runs` migration
+  stays undrafted until a real adapter exists to populate it.
+- **Two-way sync** — explicitly gated on the cloud providers above (one-way
+  import first, per §10); not applicable yet.
+- **Direct/scheduled communication providers** (WhatsApp Business API,
+  Twilio, etc.) and the **approval-policy/scheduled-message persistence**
+  that would gate them — same reasoning: no real provider account exists
+  to build and verify an adapter against, and the approval-binding decision
+  (`docs/decisions/0004-message-approval-binding.md`) already says what the
+  data model needs to do once one exists. Building the tables now, with
+  nothing able to write to them, would be exactly the unused speculative
+  schema the master prompt says not to create.
+- **Native-push adapter** — needs `apps/mobile` (Stage 7). Web push already
+  exists from Stage 2; this is additionally about a native mobile push
+  token, not applicable until the mobile app exists.
+
 ## Known blockers (do not silently skip; re-check each stage)
 
 - **Live Supabase project connected, but without its service-role key in
@@ -176,6 +207,13 @@ below.
   console/log adapter everywhere, including in this environment's
   verification. Generate a real pair (`npx web-push generate-vapid-keys`)
   before push notifications can actually reach a browser.
+- **Device-contact picker not verified on a real device.** The Stage 4
+  import wizard's "Import from this device's contacts" button uses the W3C
+  Contact Picker API, supported today only on Chrome for Android — no
+  mobile Chrome browser exists in this environment to confirm it actually
+  opens the picker and returns real contacts. `isAvailable()` correctly
+  hides the button everywhere else, so the worst case elsewhere is just a
+  missing button, not a broken one.
 - **Supabase's "Leaked Password Protection" advisory is disabled** —
   surfaced by `get_advisors` but not acted on, since Noyala only supports
   passwordless (magic-link) sign-in; this setting only affects
