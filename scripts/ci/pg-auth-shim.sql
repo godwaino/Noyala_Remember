@@ -20,6 +20,15 @@ create or replace function auth.uid() returns uuid
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
 
+-- Added for Stage 6: circle_invitations' RLS policies match an invitee by
+-- email (auth.email()), matching the real Supabase function of the same
+-- name/behaviour.
+create or replace function auth.email() returns text
+  language sql stable
+  as $$
+    select nullif(current_setting('request.jwt.claim.email', true), '')::text
+  $$;
+
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then
