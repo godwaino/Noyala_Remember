@@ -13,6 +13,11 @@ import {
  * service role can read/write it. Concurrency-safe claiming is done in the
  * database via `claim_outbox_job` (SELECT ... FOR UPDATE SKIP LOCKED),
  * verified against a live project — see docs/stage-reports/stage-1.md.
+ *
+ * `claim_outbox_job` also reclaims jobs a crashed worker left stuck in
+ * "processing" (dead-lettering ones that have exhausted their attempts) —
+ * see docs/decisions/0006-outbox-stale-processing-reclaim.md. The staleness
+ * threshold has a SQL-side default, so this client doesn't need to pass one.
  */
 export function createPostgresOutboxStore(client: SupabaseClient): OutboxStore {
   return {

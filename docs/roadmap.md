@@ -39,55 +39,58 @@ output, or an explicit documented blocker), not when code merely exists.
 ## Response to review.md (2026-09-05)
 
 The repo owner added `review.md` at the repository root with an
-architecture review of the Master Build Prompt. It raises real gaps and
-process suggestions. Rather than let a loose root file be the only record
-of it, here's where each point lands:
+architecture review of the Master Build Prompt. It raised real gaps and
+process suggestions, acted on as follows rather than left as a loose root
+file.
 
-**Already resolved, with evidence:**
-- "A child record could carry the current user's `user_id` while
-  referencing another user's `person_id` unless explicitly prevented" —
-  this is exactly why `important_dates`/`memories`/`message_drafts`/
-  `message_history` carry a composite foreign key on
-  `(person_id, user_id)` against a matching unique constraint on `people`
-  (see `docs/architecture.md` and the Stage 1/2 migrations). Verified live
-  by seeding two users and confirming a cross-user insert is rejected —
-  `docs/stage-reports/stage-1.md` and `stage-2.md`.
+**Resolved outright, with evidence:**
+- *Cross-record isolation* ("a child record could carry the current
+  user's `user_id` while referencing another user's `person_id`") — this
+  is exactly why `important_dates`/`memories`/`message_drafts`/
+  `message_history` carry a composite foreign key on `(person_id,
+  user_id)` against a matching unique constraint on `people`. Verified
+  live by attempting exactly that cross-reference — `docs/stage-reports/stage-1.md`.
+- *Reminder crash recovery* ("what happens when a worker crashes before
+  recording success") — `claim_outbox_job` now reclaims jobs stuck in
+  `processing` past a staleness threshold, dead-lettering ones that have
+  already exhausted their attempts rather than reclaiming forever. New
+  migration `20260905000000_reclaim_stale_outbox_jobs.sql`, decision
+  recorded in `docs/decisions/0006-outbox-stale-processing-reclaim.md`,
+  verified live and covered by `scripts/ci/outbox-smoke-test.sh` on every
+  push. This does not solve per-provider delivery idempotency (a provider
+  that accepted a send right before the crash) — that still needs a real
+  provider to design against (Stage 2/4).
+- *Message approval binding* — decided: binds to exact content, channel
+  and recipient; any change invalidates it. `docs/decisions/0004-message-approval-binding.md`,
+  detailed in `docs/state-transitions.md`.
+- *Deletion vs. immutable draft snapshots* — decided: the existing
+  cascade (person/account deletion removes `message_drafts` and their
+  snapshots) is sufficient; no separate per-memory redaction mechanism.
+  `docs/decisions/0005-deletion-cascade-covers-snapshots.md`.
+- The four requested process deliverables now exist as living documents:
+  `docs/permissions.md` (permission matrix), `docs/state-transitions.md`
+  (reminders/approval/deletion/account lifecycles), `docs/integrations.md`
+  (provider capability matrix using the *implemented / tested locally /
+  verified against the provider / production-enabled* taxonomy the review
+  proposed — adopted as the standing convention for every future
+  provider integration, not just a one-off label).
 
-**Tracked against the stage that owns them (not yet built, so not yet a
-regression):**
-- Ownership vs. shared-circle access, field-level sharing, surprise-gift
-  recipient mapping → Stage 6. RLS alone won't implement field-level
-  sharing; needs an explicit design before that stage's migrations.
-- Provider delivery idempotency / uncertain-delivery reconciliation after
-  a worker crash → applies once a real send/notification provider exists
-  (Stage 2's reminder adapters, Stage 4's direct-send). The Stage 1 outbox
-  (attempt counts, dead-letter, deterministic dedup keys) is the
-  foundation; the provider-specific reconciliation policy still needs
-  writing when that adapter is built.
-- Message approval binding to exact content + destination → Stage 3
-  design decision before drafts/approval exist. Recommend adopting the
-  reviewer's proposal (approve the final message once; require fresh
-  approval if content or destination changes) rather than leaving it
-  ambiguous.
-- Immutable draft context outliving a deleted memory → Stage 3, once
-  `message_drafts.context_snapshot` holds real content. Needs an explicit
-  deletion-cascade decision (e.g. redact snapshot content when the source
-  memory is deleted, keep only non-content metadata) before that table is
-  used for anything real.
-- Occasions beyond fixed month/day (lunar/calendar-dependent religious or
-  cultural dates) → the current `important_dates` schema only supports
-  Gregorian month/day/optional-year recurrence. Genuine gap against the
-  product's "religious/cultural occasions" capability; needs its own
-  design pass, likely alongside Stage 2's remaining reminder-adapter work
-  or as a dedicated follow-up.
-- Offline cache revocation / immediate-revocation vs. already-downloaded
-  data → Stage 7 (native/offline).
-
-**Adopted now:** stage reports should distinguish *implemented*, *tested
-locally*, *verified against the provider*, and *production-enabled*
-rather than a flat "done" — already the de facto pattern in
-`docs/stage-reports/stage-1.md` and `stage-2.md`, now made explicit here
-as the convention going forward.
+**Genuinely open — needs a product decision, not a code fix:**
+- *Occasions beyond fixed month/day* (lunar/calendar-dependent religious
+  or cultural dates) — the current `important_dates` schema only supports
+  Gregorian month/day/optional-year recurrence. This is a real gap against
+  the product's "religious/cultural occasions" capability, and resolving
+  it means picking which calendar systems to support and where their
+  authoritative occurrence dates come from (an external calendar-
+  conversion service, most likely) — not something to guess at
+  unilaterally. Tracked as an open question for Stage 2's continuation or
+  a dedicated follow-up; needs the repo owner's input on scope.
+- *Shared-circle permission matrix, field-level sharing, surprise-gift
+  recipient mapping* — `docs/permissions.md` has a placeholder section
+  listing exactly what Stage 6 needs to settle before its migrations are
+  written; not designed yet because circles don't exist yet.
+- *Offline cache revocation vs. already-downloaded data* — Stage 7
+  (native/offline), same reasoning.
 
 **Product/UX proposals needing a decision, not unilaterally adopted:** the
 review also proposes several changes beyond the Master Build Prompt's
