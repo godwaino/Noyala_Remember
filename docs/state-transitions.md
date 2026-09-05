@@ -37,7 +37,7 @@ processing ──stale for >10min, attempts left────────▶ proc
   them. A dead-lettered job needs a human/operator action (Stage 8's admin
   console, not yet built) to requeue if it should still happen.
 
-## Reminder deliveries (`notification_deliveries.status`) — schema built (Stage 1), producer not yet built (Stage 2 remaining work)
+## Reminder deliveries (`notification_deliveries.status`) — built, Stage 2
 
 ```
 scheduled ──sent──▶ sent
@@ -45,25 +45,36 @@ scheduled ──failed (retries exhausted)──▶ failed
 scheduled ──date/time changed before delivery──▶ cancelled (new row scheduled instead)
 ```
 
-- The table and dedup-key uniqueness exist; the reminder-discovery job
-  that actually creates and transitions these rows is Stage 2's remaining
-  work (`docs/roadmap.md`).
-- **Decision, resolved now per `review.md`'s "catch-up behaviour after
-  downtime and changes to dates or timezones":** a changed important-date
-  (edited month/day/year/timezone) must cancel any `scheduled` delivery
-  rows tied to the old computed occurrence and let the next
-  reminder-discovery run recompute + reschedule fresh ones under new
-  dedup keys — never mutate a `scheduled` row's timestamp in place, so the
-  audit trail shows the change rather than silently moving a reminder.
-  Not yet implemented (no producer exists yet); tracked here so the
-  reminder-discovery job is built against this rule from the start.
-- **Decision on downtime catch-up:** if the reminder-discovery job doesn't
-  run for a period (deploy outage, etc.), on next run it must schedule
-  reminders for any date whose window it missed only if `today` is still
-  on-or-before the occurrence date itself (never send a "birthday is
-  tomorrow" reminder for a birthday that already passed) — i.e. clamp to
-  the `0`-day-offset case rather than back-filling multiple missed offsets
-  for the same occurrence.
+- `/api/cron/discover-reminders` (`packages/domain/src/reminders.ts`'s
+  `discoverReminders`, an exact-match `daysUntil === offsetDays` check per
+  date) creates the `scheduled` row + a matching outbox job, both under the
+  same deterministic dedup key; `/api/cron/process-outbox` claims and
+  delivers them, transitioning to `sent` or `failed`. Both scheduled via
+  `apps/web/vercel.json`.
+- **Resolved per `review.md`'s "catch-up behaviour after downtime and
+  changes to dates or timezones":** editing an important date (month/day/
+  year/timezone) cancels any `scheduled` rows still tied to it
+  (`cancelScheduledDeliveries` in `apps/web/src/server/important-dates/actions.ts`)
+  rather than mutating them in place, so the audit trail shows the change
+  and the next discovery run reschedules fresh rows under new dedup keys.
+  Verified live: editing a date cancels its `scheduled` row without
+  touching an already-`sent` one for the same date.
+- **Downtime catch-up, verified by construction rather than a special
+  code path:** `discoverReminders` always recomputes each date's *next*
+  occurrence from `today` (via `nextOccurrence`, which never returns a
+  past date) and only matches an *exact* `daysUntil === offsetDays`. If a
+  run is skipped, the next run simply finds no match for an offset whose
+  window already passed — it never fires a stale "reminder" for a day
+  that's gone — and still fires correctly the moment `daysUntil` reaches a
+  later configured offset, down to `0` on the occurrence day itself. See
+  `packages/domain/src/__tests__/reminders.test.ts`'s "does not back-fill
+  a missed earlier offset" test.
+- **Known gap, not solved by the above:** if an outbox job for a reminder
+  gets dead-lettered (every delivery attempt transient-failed through the
+  full retry backoff), nothing currently marks the corresponding
+  `notification_deliveries` row `failed` — it stays `scheduled` forever.
+  Reconciling dead-lettered reminder jobs is Stage 8 admin-console
+  territory (`apps/web/src/server/outbox/process-reminder-job.ts`).
 
 ## Message approval — not built yet (Stage 3); binding decided now
 

@@ -8,7 +8,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | --- | --- | --- | --- |
 | 0 | Discovery, brand foundation, implementation baseline | Done | `docs/stage-reports/stage-0.md` |
 | 1 | Production foundation | Done (with documented blockers) | `docs/stage-reports/stage-1.md` |
-| 2 | Relationship core | In progress | `docs/stage-reports/stage-2.md` |
+| 2 | Relationship core | Done (informal accessibility pass only) | `docs/stage-reports/stage-2.md` |
 | 3 | Communication intelligence | Not started | — |
 | 4 | Connected contacts and communication | Not started | — |
 | 5 | Relationship care | Not started | — |
@@ -104,35 +104,66 @@ repo owner to decide, not implemented here.
 
 ## Stage 2 remaining work
 
-People/dates/memories CRUD, Home/Calendar, CSV/vCard export and
-delete-person/account are done and verified (see stage report). Still
-open before Stage 2's exit gate is fully met:
+People/dates/memories CRUD, Home/Calendar, CSV/vCard export,
+delete-person/account, reminder-delivery adapters (email + web push),
+the reminder-discovery/outbox-processing scheduled routes, delivery-history
+UI, and a basic offline-tolerant service worker are all done and verified
+(see stage report and `docs/stage-reports/stage-2.md`). Only one item is
+still open before Stage 2's exit gate is fully met:
 
-- Email and web-push reminder adapters, the reminder-discovery scheduled
-  job, and delivery-history UI. The domain logic they need
-  (`isInReminderWindow`, the Stage 1 outbox) already exists.
-- Offline-tolerant PWA behaviour for read/capture paths (no service worker
-  yet).
 - A real keyboard-navigation/screen-reader pass — today's forms have
   labels and focus-visible styling, but nothing formal has verified it.
+  Master Build Prompt §21 puts the full WCAG audit at Stage 9 explicitly,
+  so this is a soft gap rather than a blocker to moving on.
 
 ## Known blockers (do not silently skip; re-check each stage)
 
 - **Live Supabase project connected, but without its service-role key in
   this environment.** Project `gzldzzianiwoivszkopk` (eu-west-2) has all
-  Stage 1 migrations applied and was used to verify RLS cross-user
-  isolation and the `claim_outbox_job` grants for real — see
-  `docs/stage-reports/stage-1.md`. `NEXT_PUBLIC_SUPABASE_URL` and
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` are in `apps/web/.env.local` (gitignored)
-  and the production build/auth pages were smoke-tested against it.
-  `SUPABASE_SERVICE_ROLE_KEY` isn't exposed by the Supabase connection tool
-  used to provision it, so the service-role-only code paths — the
-  Postgres-backed outbox client and any future background worker — are
-  unit-tested with a mocked client but not yet run against the live
-  project. Whoever has that key next should add it to `.env.local` and
-  exercise `createPostgresOutboxStore` for real. A full magic-link
-  click-through (receiving the email, following the link to
-  `/auth/callback`) also hasn't been done — it needs a real inbox.
+  migrations applied and was used to verify RLS cross-user isolation, the
+  `claim_outbox_job` grants, and the reminder-discovery/cancel-on-edit
+  pipeline for real — see `docs/stage-reports/stage-1.md` and `stage-2.md`.
+  `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are in
+  `apps/web/.env.local` (gitignored). `SUPABASE_SERVICE_ROLE_KEY` isn't
+  exposed by the Supabase connection tool used to provision it, so
+  service-role-only code (`createPostgresOutboxStore`, the two
+  `/api/cron/*` routes, `deleteAccount`) is unit-tested with mocks and
+  verified at the SQL level, but the actual Next.js route handlers
+  couldn't be invoked end-to-end here. Whoever has that key next should
+  add it and exercise those routes for real. A real user has since signed
+  up and used magic-link sign-in against this project — see the next item.
+- **Real magic-link failure found and fixed, but not yet re-verified live
+  after the fix.** A real user (not a test fixture) hit "the sign-in link
+  takes me back to sign in" — Supabase's own auth logs showed
+  `"One-time token not found"` on several `/verify` calls, consistent with
+  something (most likely an email-client link-scanner, given the
+  Outlook/Hotmail address involved) consuming the single-use link before
+  the user's own click. Fixed in
+  `docs/decisions/0007-magic-link-error-surfacing.md`: `/auth/callback` no
+  longer swallows the real reason, and `/login` now displays it instead of
+  silently re-showing a blank form. Whoever deploys this fix should
+  confirm the user can now complete sign-in, or escalate to a numeric-OTP
+  fallback if link-scanning turns out to be the dominant cause (needs the
+  Supabase project's email template updated to expose `{{ .Token }}` —
+  this environment has no tool for editing Auth email templates).
+- **`CRON_SECRET` needed for the reminder scheduler.** `/api/cron/discover-reminders`
+  and `/api/cron/process-outbox` 401 without a matching
+  `Authorization: Bearer <CRON_SECRET>` header. Set it in the deployment
+  environment and Vercel will send it automatically for the crons defined
+  in `apps/web/vercel.json` (see Vercel's cron-job docs for the exact
+  mechanism); without it, reminders are never discovered or delivered even
+  though everything else works.
+- **Web push has real VAPID keys generated nowhere yet.** `VAPID_PUBLIC_KEY`/
+  `VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY` are
+  all unset in every environment so far — push falls back to the
+  console/log adapter everywhere, including in this environment's
+  verification. Generate a real pair (`npx web-push generate-vapid-keys`)
+  before push notifications can actually reach a browser.
+- **Supabase's "Leaked Password Protection" advisory is disabled** —
+  surfaced by `get_advisors` but not acted on, since Noyala only supports
+  passwordless (magic-link) sign-in; this setting only affects
+  password-based auth, which this app doesn't use. Revisit if password
+  sign-in is ever added.
 - **Migration version numbers won't match if this repo is later `supabase
   link`ed to project `gzldzzianiwoivszkopk`.** Migrations were applied via
   the Supabase management API, which timestamps them at apply time, not

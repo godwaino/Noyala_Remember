@@ -104,6 +104,91 @@ table Stage 2 uses.
   unauthenticated; `/` and `/settings` render their signed-out states
   correctly.
 
+## Reminder delivery, adapters, scheduler, PWA (second slice)
+
+- **Reminder discovery** (`packages/domain/src/reminders.ts`,
+  `discoverReminders`): exact-match `daysUntil === offsetDays` per
+  important date, built on `nextOccurrence`/`isInReminderWindow` from the
+  first slice. Deliberately exact-match rather than "due or earlier" so a
+  skipped run never back-fills a stale reminder for a day that's already
+  passed — see `packages/domain/src/__tests__/reminders.test.ts` (6 tests,
+  including "does not back-fill a missed earlier offset").
+- **Adapters** (`apps/web/src/server/notifications/`): email
+  (`console-email-provider` dev fallback, `resend-email-provider` for
+  production, selected by whether `EMAIL_PROVIDER_API_KEY` is set) and web
+  push (`console-push-provider` fallback, `web-push-provider` using the
+  `web-push` npm package and self-generated VAPID keys). Both implement the
+  `EmailProvider`/`WebPushProvider` interfaces from `packages/domain/src/notifications.ts`
+  and classify permanent vs. transient failures (`SendResult.permanentFailure`)
+  so the caller knows whether to retry or give up.
+- **Processing** (`apps/web/src/server/outbox/process-reminder-job.ts`):
+  loads the `notification_deliveries` row by dedup key, no-ops if it's
+  missing or no longer `scheduled` (idempotent re-run), sends via the
+  chosen channel, deletes push subscriptions that report a permanent
+  failure (expired/unsubscribed), and marks the delivery `sent` or
+  `failed`. 7 unit tests against a mocked Supabase client
+  (`apps/web/src/server/outbox/__tests__/process-reminder-job.test.ts`).
+- **Scheduling**: two Vercel Cron routes (`apps/web/src/app/api/cron/
+  discover-reminders`, `.../process-outbox`), both guarded by
+  `requireCronSecret` (401 without a matching `Authorization: Bearer
+  <CRON_SECRET>` header), wired in `apps/web/vercel.json`.
+- **Delivery-history UI**: `NotificationDeliveryList` on the settings page,
+  reading the user's own `notification_deliveries` rows through RLS.
+- **Cancel-on-edit** (`cancelScheduledDeliveries` in
+  `apps/web/src/server/important-dates/actions.ts`): editing an important
+  date's month/day/year/timezone cancels its still-`scheduled` delivery
+  rows rather than mutating them, so a stale reminder never fires for the
+  old date. See `docs/state-transitions.md`.
+- **Offline-tolerant PWA**: `apps/web/public/sw.js` (cache-first for
+  static assets, network-first-with-offline-fallback for navigation) and
+  `public/offline.html`, registered via `ServiceWorkerRegistration` in the
+  root layout. `PushSubscribeButton` wires the browser's Push API to a new
+  `push_subscriptions` table (migration
+  `20260905000100_push_subscriptions.sql`, RLS-scoped to the owning user).
+
+### Verified against the live project (this slice)
+
+Seeded a real important date, ran the discovery→outbox→processing SQL
+sequence directly against the live project (this environment's Supabase
+connection has no service-role key, so the actual HTTP routes couldn't be
+invoked — see `docs/integrations.md` for the exact verification-status
+distinction): idempotent double-discovery produced exactly one
+`notification_deliveries` row, `claim_outbox_job` atomically claimed it,
+marking it `sent` worked, and editing the underlying date cancelled the
+still-`scheduled` row without touching an already-`sent` one for the same
+date. `push_subscriptions` RLS was verified live the same way Stage 1
+verified every other table's RLS. All seeded rows were removed afterward.
+The email/web-push adapters themselves ran only against the console/log
+fallback here (no Resend key, no real browser push subscription in this
+environment) — see `docs/integrations.md`'s per-provider status.
+
+## Production auth bug found and fixed (this slice)
+
+A real user (not a test fixture) signed up against the live project and
+reported "the sign-in link takes me back to sign in." Supabase's own
+`auth_logs` (queried via `mcp__Supabase__query_logs`) showed `"One-time
+token not found"` / `"403: Email link is invalid or has expired"` on
+several `/verify` calls for that account, interleaved with at least one
+successful login — consistent with something (most likely an email
+client's link-scanner, given the Outlook/Hotmail address) consuming the
+single-use magic-link token before the user's own click.
+
+Root-causing this also surfaced a real bug in this repo's own code:
+`/auth/callback` swallowed every failure into one generic message, and
+`/login` never displayed any error at all, so an expired/pre-consumed link
+was indistinguishable from "sign-in is broken." Fixed by having
+`/auth/callback` forward Supabase's actual `error`/`error_description`
+(when `/verify` fails before a code is even issued) or the real
+`exchangeCodeForSession` error message, and having `/login` read and
+display it as a banner. See `docs/decisions/0007-magic-link-error-surfacing.md`.
+
+This fix is **implemented and tested locally** (typecheck/lint/test/build
+all pass) but had not yet been re-verified live against a fresh
+link-scanner-affected sign-in attempt at the time this report was written
+— see `docs/roadmap.md`'s "Known blockers" for the follow-up needed
+(confirm the real user can now complete sign-in; consider a numeric-OTP
+fallback if link-scanning turns out to be the dominant cause).
+
 ## Known limitations
 
 - **Accessibility**: forms have labels, focus-visible styling carries over
@@ -115,18 +200,25 @@ table Stage 2 uses.
   "keyboard journeys pass accessibility checks" is only informally met.
 - **Delete-account** code path is implemented but not run against the live
   project (see above) — needs the service-role key.
-- **Email/web-push reminder adapters** (Stage 2's own deliverable list)
-  are **not built yet** — this stage delivered the domain logic they'll
-  need (`isInReminderWindow`, the outbox) but not the adapters, the
-  scheduler wiring, or delivery-history UI. That's the next slice of
-  Stage 2 work.
-- **Offline-tolerant PWA behaviour** (Stage 2 deliverable) not addressed —
-  no service worker yet.
+- **Dead-lettered reminder jobs don't reconcile delivery status** — if
+  every delivery attempt for a reminder transient-fails through the full
+  outbox retry backoff, the job is dead-lettered but the corresponding
+  `notification_deliveries` row stays `scheduled` forever rather than
+  being marked `failed`. Documented as a known gap in
+  `docs/state-transitions.md`; reconciling it is Stage 8 admin-console
+  territory.
+- **No real provider credentials anywhere** — email and web push both run
+  against console/log fallbacks only; see `docs/integrations.md` for what
+  "verified against the provider" would still require (a Resend key, a
+  real browser push subscription).
 - No integration/E2E test runner is wired up yet (Playwright or similar);
   coverage so far is unit tests (domain logic) plus manual + live-project
   verification of the query/RLS shapes, not automated browser tests.
 
 ## What's next
 
-Reminder adapters + scheduler + delivery history, then offline-tolerant
-read paths, complete Stage 2. See `docs/roadmap.md`.
+Only the formal keyboard-navigation/screen-reader pass remains open for
+Stage 2's exit gate (soft gap — Master Build Prompt §21 puts the full
+audit at Stage 9). Everything else in Stage 2's deliverable list is built
+and verified per the taxonomy above. See `docs/roadmap.md` for Stage 3
+onward.

@@ -5,6 +5,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { reportError } from "@/server/observability/error-monitoring";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
+import { PushSubscribeButton } from "@/components/PushSubscribeButton";
+import { NotificationDeliveryList } from "@/components/NotificationDeliveryList";
+import { listNotificationDeliveries } from "@/server/notifications/queries";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -12,9 +15,10 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   let email: string | null = null;
   let configured = true;
+  let supabase: Awaited<ReturnType<typeof getSupabaseServerClient>> | undefined;
 
   try {
-    const supabase = await getSupabaseServerClient();
+    supabase = await getSupabaseServerClient();
     const result = await supabase.auth.getUser();
     email = result.data.user?.email ?? null;
   } catch (error) {
@@ -51,6 +55,8 @@ export default async function SettingsPage() {
     );
   }
 
+  const deliveries = await listNotificationDeliveries(supabase!);
+
   return (
     <div>
       <h1 className="text-xl font-semibold">Settings</h1>
@@ -66,6 +72,19 @@ export default async function SettingsPage() {
           Sign out
         </button>
       </form>
+
+      <section className="border-border mt-10 border-t pt-6">
+        <h2 className="text-ink font-semibold">Reminders</h2>
+        <p className="text-ink-muted mt-1 text-sm">
+          Push notifications for upcoming dates, delivered by your browser.
+        </p>
+        <div className="mt-3">
+          <PushSubscribeButton vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        </div>
+        <div className="mt-6">
+          <NotificationDeliveryList deliveries={deliveries} />
+        </div>
+      </section>
 
       <section className="border-border mt-10 border-t pt-6">
         <h2 className="text-ink font-semibold">Export your data</h2>
