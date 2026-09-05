@@ -57,6 +57,7 @@ export const ENV_VARS = [
   { name: "NEXT_PUBLIC_VAPID_PUBLIC_KEY", required: false },
   { name: "CRON_SECRET", required: true },
   { name: "AI_PROVIDER_API_KEY", required: false },
+  { name: "AI_GENERATION_MAX_PER_HOUR", required: false },
   { name: "ERROR_MONITORING_DSN", required: false },
 ] as const;
 

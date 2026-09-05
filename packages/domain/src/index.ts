@@ -6,3 +6,4 @@ export * from "./csv";
 export * from "./vcard";
 export * from "./reminders";
 export * from "./notifications";
+export * from "./messages";

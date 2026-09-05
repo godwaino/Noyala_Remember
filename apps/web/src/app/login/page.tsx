@@ -7,12 +7,12 @@ export const metadata: Metadata = { title: "Sign in" };
 function friendlyCallbackError(raw: string): string {
   const lower = raw.toLowerCase();
   if (raw === "missing_code" || lower.includes("expired") || lower.includes("invalid") || lower.includes("not found")) {
-    return "That sign-in link isn't valid — it may have expired or already been used (this can happen if your email provider pre-visits links to scan them). Request a new one below.";
+    return "That sign-in link isn't valid — it may have expired or already been used. Request a new code below instead.";
   }
   if (raw === "unexpected_error") {
     return "Something went wrong completing sign-in. Please try again.";
   }
-  return `Sign-in failed: ${raw}. Please request a new link below.`;
+  return `Sign-in failed: ${raw}. Please request a new code below.`;
 }
 
 export default async function LoginPage({
@@ -26,7 +26,7 @@ export default async function LoginPage({
     <div>
       <h1 className="text-xl font-semibold">Sign in to {brand.name}</h1>
       <p className="text-ink-muted mt-1 text-sm">
-        We&apos;ll email you a link — no password to remember.
+        We&apos;ll email you a 6-digit code — no password to remember.
       </p>
       {error ? (
         <p role="alert" className="text-danger bg-primary-muted/20 mt-4 rounded-md p-3 text-sm">
