@@ -143,20 +143,26 @@ below.
   couldn't be invoked end-to-end here. Whoever has that key next should
   add it and exercise those routes for real. A real user has since signed
   up and used magic-link sign-in against this project — see the next item.
-- **Real magic-link failure found and fixed, but not yet re-verified live
-  after the fix.** A real user (not a test fixture) hit "the sign-in link
-  takes me back to sign in" — Supabase's own auth logs showed
-  `"One-time token not found"` on several `/verify` calls, consistent with
-  something (most likely an email-client link-scanner, given the
-  Outlook/Hotmail address involved) consuming the single-use link before
-  the user's own click. Fixed in
-  `docs/decisions/0007-magic-link-error-surfacing.md`: `/auth/callback` no
-  longer swallows the real reason, and `/login` now displays it instead of
-  silently re-showing a blank form. Whoever deploys this fix should
-  confirm the user can now complete sign-in, or escalate to a numeric-OTP
-  fallback if link-scanning turns out to be the dominant cause (needs the
-  Supabase project's email template updated to expose `{{ .Token }}` —
-  this environment has no tool for editing Auth email templates).
+- **Magic-link sign-in replaced with a 6-digit code — one manual dashboard
+  step still required.** The error-surfacing fix in
+  `docs/decisions/0007-magic-link-error-surfacing.md` didn't resolve the
+  underlying failure: the same real user hit the identical symptom again
+  afterward, confirming the link itself (not this app's error handling)
+  was the problem — almost certainly an email-client link-scanner
+  consuming the single-use link before the user's own click. Per
+  `docs/decisions/0009-otp-code-sign-in.md`, `/login` now asks for a typed
+  6-digit code instead of sending a clickable link.
+  **This only fully takes effect once someone edits the Supabase
+  project's "Magic Link" email template** (Dashboard → Authentication →
+  Email Templates → Magic Link) to show `{{ .Token }}` as plain text and
+  remove the `{{ .ConfirmationURL }}` link entirely — this environment has
+  no tool for editing Auth email templates, so this is a manual step for
+  whoever has dashboard access. Until that template is updated, the user
+  will keep receiving the old link-based email even though the app code
+  no longer relies on it. The project has separately been configured with
+  Brevo as a custom SMTP provider for better deliverability — that fixes
+  *sending*, not the link-prefetching problem, so the template change is
+  still required.
 - **`CRON_SECRET` needed for the reminder scheduler.** `/api/cron/discover-reminders`
   and `/api/cron/process-outbox` 401 without a matching
   `Authorization: Bearer <CRON_SECRET>` header. Set it in the deployment
