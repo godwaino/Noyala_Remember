@@ -35,7 +35,7 @@ export const onboardingInputSchema = z.object({
 
 export type OnboardingInput = z.infer<typeof onboardingInputSchema>;
 
-function isValidTimeZone(timeZone: string): boolean {
+export function isValidTimeZone(timeZone: string): boolean {
   try {
     Intl.DateTimeFormat(undefined, { timeZone });
     return true;
@@ -43,3 +43,80 @@ function isValidTimeZone(timeZone: string): boolean {
     return false;
   }
 }
+
+const RELATIONSHIP_TYPES = [
+  "partner",
+  "family",
+  "friend",
+  "colleague",
+  "acquaintance",
+  "other",
+] as const;
+
+/** Keep in sync with the `people` migration's CHECK constraint. */
+export const personInputSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(120),
+  lastName: z.string().trim().max(120).optional().or(z.literal("")),
+  nickname: z.string().trim().max(120).optional().or(z.literal("")),
+  relationshipType: z.enum(RELATIONSHIP_TYPES),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  email: z.string().trim().email("Enter a valid email address").optional().or(z.literal("")),
+  pronouns: z.string().trim().max(40).optional().or(z.literal("")),
+  notes: z.string().trim().max(4000).optional().or(z.literal("")),
+});
+
+export type PersonInput = z.infer<typeof personInputSchema>;
+
+/** Keep in sync with the `important_dates` migration's CHECK constraints. */
+export const importantDateInputSchema = z
+  .object({
+    type: z.enum(["birthday", "anniversary", "custom"]),
+    label: z.string().trim().min(1, "Label is required").max(120),
+    month: z.number().int().min(1).max(12),
+    day: z.number().int().min(1).max(31),
+    // Empty string from a form select means "unknown" — never fabricate a year.
+    year: z
+      .union([z.number().int().min(1900).max(2100), z.null()])
+      .optional()
+      .transform((v) => v ?? null),
+    recursAnnually: z.boolean().default(true),
+    reminderOffsets: z.array(z.number().int().min(0).max(365)).default([14, 7, 1, 0]),
+    timezone: z.string().refine(isValidTimeZone, "Must be a valid IANA timezone"),
+  })
+  .refine((v) => v.recursAnnually || v.year !== null, {
+    message: "A one-time (non-recurring) date needs a known year",
+    path: ["year"],
+  })
+  .refine((v) => isValidCalendarDay(v.month, v.day), {
+    message: "That day doesn't exist in the given month",
+    path: ["day"],
+  });
+
+export type ImportantDateInput = z.infer<typeof importantDateInputSchema>;
+
+function isValidCalendarDay(month: number, day: number): boolean {
+  // 29 Feb is deliberately allowed here even outside a leap year — that's
+  // the whole point of the leap-day policy in packages/domain/src/dates.ts.
+  const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= (daysInMonth[month - 1] ?? 31);
+}
+
+const MEMORY_CATEGORIES = [
+  "family",
+  "work",
+  "interest",
+  "milestone",
+  "gift",
+  "preference",
+  "general",
+] as const;
+
+/** Keep in sync with the `memories` migration's CHECK constraints. */
+export const memoryInputSchema = z.object({
+  content: z.string().trim().min(1, "Memory can't be empty").max(2000),
+  category: z.enum(MEMORY_CATEGORIES).default("general"),
+  occurredOn: z.string().trim().max(10).optional().or(z.literal("")),
+  sensitivity: z.enum(["standard", "sensitive"]).default("standard"),
+});
+
+export type MemoryInput = z.infer<typeof memoryInputSchema>;

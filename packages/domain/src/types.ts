@@ -39,6 +39,15 @@ export type RelationshipType =
   | "acquaintance"
   | "other";
 
+export const RELATIONSHIP_TYPE_OPTIONS: { value: RelationshipType; label: string }[] = [
+  { value: "partner", label: "Partner" },
+  { value: "family", label: "Family" },
+  { value: "friend", label: "Friend" },
+  { value: "colleague", label: "Colleague" },
+  { value: "acquaintance", label: "Acquaintance" },
+  { value: "other", label: "Other" },
+];
+
 export interface Person {
   id: UUID;
   userId: UUID;
