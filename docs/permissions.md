@@ -81,6 +81,25 @@ function (`is_circle_member`), the same pattern already used for
 own RLS instead of recursing into it. See
 `docs/decisions/0011-circle-membership-rls-recursion.md`.
 
+## Stage 7: voice capture and extracted memory candidates
+
+Owner-only throughout — no sharing exists for these tables (a voice note
+is not a `person`, so Stage 6's circle-sharing policies don't apply here
+at all).
+
+| Resource | View | Edit | Delete | Notes |
+| --- | --- | --- | --- | --- |
+| `voice_captures` | Owner | Owner | Owner | `person_id` is a plain, nullable FK (`on delete set null`) — deleting the linked person un-links the recording rather than destroying it, matching `gift_ideas.person_id`'s Stage 6 precedent for the same reason: this is not a "the row structurally belongs to that person" relationship. |
+| `extracted_memory_candidates` | Owner | Owner (review: accept/reject) | No delete policy — rows only disappear via `voice_capture_id`'s cascade | Reviewing is an update (`status` → `accepted`/`rejected`), not a delete, keeping an audit trail of what was proposed and decided — same soft-state pattern as `consents`/`circle_invitations`. |
+
+**Independent deletion, verified live**: deleting the audio
+(`storage_path = null`, `audio_deleted_at = now()`) leaves the transcript
+and any already-accepted `memories` rows untouched; deleting the
+`voice_captures` row itself cascades its `extracted_memory_candidates`
+bookkeeping rows away but does **not** touch memories already created from
+an accepted candidate — those stand on their own once created. See
+`docs/stage-reports/stage-7.md`.
+
 ## Not yet built — filled in when each stage lands
 
 **Stage 4 (contact sync) / Stage 8 (billing/admin):** support-staff and

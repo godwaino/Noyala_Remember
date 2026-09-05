@@ -203,3 +203,26 @@ export const giftIdeaInputSchema = z
 export type GiftIdeaInput = z.infer<typeof giftIdeaInputSchema>;
 
 export const giftIdeaStatusSchema = z.enum(["idea", "planned", "purchased", "given"]);
+
+/** Keep in sync with the `voice_captures` migration's CHECK constraints. */
+export const voiceCaptureInputSchema = z.object({
+  storagePath: z.string().trim().min(1),
+  durationSeconds: z.number().int().positive(),
+  personId: z.string().uuid().nullable().optional(),
+});
+
+export type VoiceCaptureInput = z.infer<typeof voiceCaptureInputSchema>;
+
+/**
+ * Reviewing a proposed fact: accept (optionally editing the content,
+ * category or person before it becomes a real memory) or reject outright.
+ * Keep in sync with the `extracted_memory_candidates` migration.
+ */
+export const memoryCandidateReviewSchema = z.object({
+  status: z.enum(["accepted", "rejected"]),
+  content: z.string().trim().min(1, "Content can't be empty").max(2000).optional(),
+  category: z.enum(MEMORY_CATEGORIES).optional(),
+  personId: z.string().uuid().nullable().optional(),
+});
+
+export type MemoryCandidateReview = z.infer<typeof memoryCandidateReviewSchema>;

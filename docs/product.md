@@ -56,6 +56,15 @@ live, not just by code inspection. Gift planning never receives memory
 content at all, and there is no merchant/affiliate integration to leak
 anything to in the first place.
 
+Stage 7's voice capture (`docs/stage-reports/stage-7.md`) is where "no
+transcript-derived fact is saved without review" gets tested: a proposed
+fact sits in `extracted_memory_candidates` with `status = 'pending'` and
+is never visible anywhere as a memory until the user explicitly accepts
+it, which is a separate insert into `memories`, not an automatic
+conversion. Deleting the audio never deletes an already-accepted fact, and
+accepting a fact never deletes the audio — the two are independent by
+construction, verified live with real rows in both directions.
+
 ## Sending / approval policy (non-negotiable)
 
 - Silent autonomous personal messaging is prohibited.
