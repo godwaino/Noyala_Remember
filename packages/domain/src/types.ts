@@ -261,6 +261,41 @@ export interface PersonShare {
 
 export type GiftIdeaStatus = "idea" | "planned" | "purchased" | "given";
 
+/** Stage 7: private voice capture and reviewed memory extraction. See
+ * docs/product.md and Master Build Prompt §13. */
+export type TranscriptionStatus = "pending" | "processing" | "succeeded" | "failed";
+
+export interface VoiceCapture {
+  id: UUID;
+  userId: UUID;
+  personId: UUID | null;
+  storagePath: string;
+  durationSeconds: number;
+  transcriptionStatus: TranscriptionStatus;
+  transcript: string | null;
+  /** Set once the audio file is deleted independently of its transcript or
+   * any memories it produced — see docs/product.md. */
+  audioDeletedAt: ISODateTime | null;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type ExtractedMemoryCandidateStatus = "pending" | "accepted" | "rejected";
+
+export interface ExtractedMemoryCandidate {
+  id: UUID;
+  userId: UUID;
+  voiceCaptureId: UUID;
+  personId: UUID | null;
+  proposedContent: string;
+  proposedCategory: MemoryCategory;
+  status: ExtractedMemoryCandidateStatus;
+  /** Which memories row this became, once accepted. */
+  resultingMemoryId: UUID | null;
+  reviewedAt: ISODateTime | null;
+  createdAt: ISODateTime;
+}
+
 export interface GiftIdea {
   id: UUID;
   circleId: UUID;

@@ -12,3 +12,4 @@ export * from "./device-contacts";
 export * from "./relationship-care";
 export * from "./circles";
 export * from "./gift-planning";
+export * from "./voice-capture";

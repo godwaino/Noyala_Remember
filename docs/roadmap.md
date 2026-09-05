@@ -13,7 +13,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 4 | Connected contacts and communication | Partial — CSV/vCard import + device picker done, cloud OAuth and direct/scheduled send blocked on credentials | `docs/stage-reports/stage-4.md` |
 | 5 | Relationship care | Done | `docs/stage-reports/stage-5.md` |
 | 6 | Shared circles and gifting | Done | `docs/stage-reports/stage-6.md` |
-| 7 | Native mobile and voice capture | Not started | — |
+| 7 | Native mobile and voice capture | Partial — schema/RLS and domain logic done and verified; native client not started | `docs/stage-reports/stage-7.md` |
 | 8 | Commercial platform and administration | Not started | — |
 | 9 | Scale, localisation and launch readiness | Not started | — |
 
@@ -216,6 +216,42 @@ fixed during that verification, not just during code review — see
   live that a direct `UPDATE circle_members SET role = ...` by anyone,
   including the owner, affects zero rows. `docs/permissions.md` records
   this as a deliberate simplification, not an oversight.
+
+## Stage 7 remaining work
+
+`voice_captures`/`extracted_memory_candidates` schema, RLS, and the
+provider-independent domain logic (`TranscriptionProvider` contract +
+deterministic mock, `extractFactCandidates`, the offline-capture-queue
+state machine) are done and verified — see `docs/stage-reports/stage-7.md`
+for the full live-verification log, including a real bug the verification
+found and fixed (`storage_path` couldn't be cleared for independent audio
+deletion — see `docs/decisions/0012-voice-captures-nullable-storage-path.md`).
+
+**Deliberately not started this round, not silently skipped** — put to the
+user directly before any of this was built, who chose to scope the round
+this way rather than build an unrunnable client:
+
+- **The Expo/React Native mobile app itself.** This environment has no
+  iOS/Android simulator or device — a scaffolded app could be typechecked
+  but never actually run, and Stage 7's exit gate explicitly requires
+  "essential journeys pass on supported iOS and Android targets." Building
+  a client no one can run or test here would be unverified scope, not
+  delivered scope, exactly the "fake success" `review.md` warned against.
+- **Real speech-to-text.** No provider credential exists in this
+  environment (the same gap Stage 3 hit with `AI_PROVIDER_API_KEY`) — the
+  `TranscriptionProvider` interface exists so a real adapter is a drop-in
+  implementation later, not a redesign.
+- Native push, device-contact permission flows, and share-sheet handoffs
+  on a real device — all need the same missing mobile runtime.
+
+When a device/simulator or CI runner with mobile testing becomes
+available, the remaining Stage 7 work is: scaffold `apps/mobile`
+(Expo/React Native) importing `packages/domain`/`packages/brand`; build
+the voice-capture record → upload → transcribe → review screens against
+the already-built schema and domain contracts; wire device contacts
+(reusing Stage 4's CSV/vCard-adjacent parsing logic) and share-sheet
+handoffs (reusing Stage 3's WhatsApp/SMS/email URL-building logic); then
+verify the exit gate's on-device journeys for real.
 
 ## Known blockers (do not silently skip; re-check each stage)
 
