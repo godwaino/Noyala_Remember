@@ -9,7 +9,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 0 | Discovery, brand foundation, implementation baseline | Done | `docs/stage-reports/stage-0.md` |
 | 1 | Production foundation | Done (with documented blockers) | `docs/stage-reports/stage-1.md` |
 | 2 | Relationship core | Done (informal accessibility pass only) | `docs/stage-reports/stage-2.md` |
-| 3 | Communication intelligence | Not started | — |
+| 3 | Communication intelligence | Done (OpenAI adapter unverified — no key) | `docs/stage-reports/stage-3.md` |
 | 4 | Connected contacts and communication | Not started | — |
 | 5 | Relationship care | Not started | — |
 | 6 | Shared circles and gifting | Not started | — |
@@ -116,6 +116,17 @@ still open before Stage 2's exit gate is fully met:
   Master Build Prompt §21 puts the full WCAG audit at Stage 9 explicitly,
   so this is a soft gap rather than a blocker to moving on.
 
+## Stage 3 remaining work
+
+Message Studio, three-option AI generation (OpenAI adapter + deterministic
+demo fallback), context selection with sensitive-memory exclusion,
+editable drafts with batch-based version history, copy/WhatsApp/SMS/email
+handoff, message action history, and rate limiting are all done and
+verified (see `docs/stage-reports/stage-3.md`). Nothing is structurally
+open; the one real gap is that the OpenAI adapter has never been exercised
+against the real API (no key in this environment) — see "Known blockers"
+below.
+
 ## Known blockers (do not silently skip; re-check each stage)
 
 - **Live Supabase project connected, but without its service-role key in
@@ -170,9 +181,16 @@ still open before Stage 2's exit gate is fully met:
   with the filenames' embedded timestamps. Reconcile with
   `supabase migration repair` rather than re-running `supabase db push`
   blind.
-- **No AI provider key.** Stage 3 is not started; when it begins, the
-  deterministic demo generator (Master Build Prompt §8) must exist even
-  without a key.
+- **No AI provider key.** `AI_PROVIDER_API_KEY` (OpenAI) is unset
+  everywhere, so message generation always uses the deterministic demo
+  generator — real, distinct-per-generation, but not live AI output.
+  Whoever adds a key next should generate one real message via Message
+  Studio and confirm it comes back as three genuinely different options
+  before calling the OpenAI adapter "verified" (`docs/integrations.md`).
+- **Send handoff links untested on a real device.** The WhatsApp/SMS/email
+  links Message Studio opens (`wa.me`/`sms:`/`mailto:`) are implemented
+  but never confirmed against a real phone/app combination — no
+  device/browser available in this environment for that.
 - **No mobile app yet.** `apps/mobile` is not created until Stage 7;
   `packages/domain` is kept framework-free specifically so that stage
   doesn't require reworking shared logic.

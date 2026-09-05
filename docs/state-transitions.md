@@ -76,7 +76,48 @@ scheduled ──date/time changed before delivery──▶ cancelled (new row sc
   Reconciling dead-lettered reminder jobs is Stage 8 admin-console
   territory (`apps/web/src/server/outbox/process-reminder-job.ts`).
 
-## Message approval — not built yet (Stage 3); binding decided now
+## Message drafts (`message_drafts.generation_status`) — built, Stage 3
+
+```
+(request) ──provider succeeds──▶ succeeded (row written)
+(request) ──provider fails (timeout/invalid_schema/provider_error/rate_limited)──▶ nothing written
+```
+
+Generation is synchronous within the request: `generateMessageDraft`
+(`apps/web/src/server/messages/actions.ts`) awaits the provider before
+writing anything, so there is no persisted `pending` state and a failure
+never leaves an orphan row — it returns a form error and the user retries.
+`pending`/`failed` remain valid schema values reserved for a future async
+generation path (e.g. a queued job for a slower provider); nothing in
+Stage 3 writes them. Every persisted draft today has
+`generation_status = 'succeeded'`. Editing a draft's `content` afterward
+is a plain update — drafts are working copies, not immutable, until a
+handoff records them into `message_history`; `context_snapshot` is never
+touched by an edit, keeping Master Build Prompt §5's "immutable context
+snapshot" guarantee. Three options from one generation share a `batchId`
+stashed in `model_metadata` (not a new column — see
+`docs/decisions/0008-message-draft-batching-in-metadata.md`); regenerating
+creates a fresh batch rather than mutating the old one, so every past
+generation stays browsable at its own URL — that's this stage's version
+history. Verified live: seeded a batch of 3, confirmed the
+`model_metadata->>batchId` grouping query, an authenticated edit, and
+cross-user isolation (`docs/stage-reports/stage-3.md`).
+
+## Message history (`message_history.action`) — built, Stage 3
+
+```
+(a draft is copied/opened/marked sent) ──insert──▶ copied | opened_in_app | marked_sent
+```
+
+Append-only by design — no update or delete policy exists for
+`authenticated`, verified live (an update from the owning user affected 0
+rows). `opened_in_app` is recorded the instant a WhatsApp/SMS/email link is
+opened and must never be shown as confirmed delivery — Master Build Prompt
+§9. `recordMessageAction` always writes the draft's current `content` as
+`final_content`, saving any in-flight edit first, so the history row
+reflects exactly what the user sent, not the original AI output.
+
+## Message approval — not built yet (Stage 4); binding decided now
 
 `review.md`: "Some passages require reviewing every message; others
 permit channel/category policies... state whether approval always binds

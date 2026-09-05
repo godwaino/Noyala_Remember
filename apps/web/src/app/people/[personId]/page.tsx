@@ -14,6 +14,7 @@ import { listImportantDatesForPerson } from "@/server/important-dates/queries";
 import { deleteImportantDate } from "@/server/important-dates/actions";
 import { listMemoriesForPerson } from "@/server/memories/queries";
 import { archiveMemory } from "@/server/memories/actions";
+import { listRecentDraftBatchesForPerson } from "@/server/messages/queries";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 
@@ -34,9 +35,10 @@ export default async function PersonDetailPage({
   const person = await getPerson(supabase, personId);
   if (!person) notFound();
 
-  const [dates, memories] = await Promise.all([
+  const [dates, memories, recentDraftBatches] = await Promise.all([
     listImportantDatesForPerson(supabase, personId),
     listMemoriesForPerson(supabase, personId),
+    listRecentDraftBatchesForPerson(supabase, personId),
   ]);
 
   const now = new Date();
@@ -71,6 +73,12 @@ export default async function PersonDetailPage({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/people/${person.id}/drafts/new`}
+            className="bg-primary text-surface rounded-md px-3 py-1.5 text-sm font-medium"
+          >
+            Write a message
+          </Link>
           <Link
             href={`/people/${person.id}/edit`}
             className="border-border rounded-md border px-3 py-1.5 text-sm font-medium"
@@ -184,6 +192,43 @@ export default async function PersonDetailPage({
                       </button>
                     </form>
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-ink font-semibold">Recent messages</h2>
+          <Link href={`/people/${person.id}/drafts/new`} className="text-primary text-sm">
+            Write a message
+          </Link>
+        </div>
+        <div className="mt-3">
+          {recentDraftBatches.length === 0 ? (
+            <EmptyState
+              title="No messages yet"
+              description="Generate a message for a birthday, anniversary or just because."
+            />
+          ) : (
+            <ul className="border-border divide-border divide-y rounded-lg border">
+              {recentDraftBatches.map((batch) => (
+                <li key={batch.batchId} className="flex items-center justify-between gap-4 p-4">
+                  <div>
+                    <p className="text-ink text-sm font-medium">{batch.occasion}</p>
+                    <p className="text-ink-muted text-xs capitalize">
+                      {batch.tone.replace(/_/g, " ")} · {batch.channel} ·{" "}
+                      {new Date(batch.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/people/${person.id}/drafts/${batch.batchId}`}
+                    className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                  >
+                    View
+                  </Link>
                 </li>
               ))}
             </ul>
