@@ -51,6 +51,21 @@ export const ENV_VARS = [
   { name: "NEXT_PUBLIC_APP_URL", required: true },
   { name: "EMAIL_PROVIDER_API_KEY", required: false },
   { name: "EMAIL_FROM_ADDRESS", required: false },
+  { name: "VAPID_PUBLIC_KEY", required: false },
+  { name: "VAPID_PRIVATE_KEY", required: false },
+  { name: "VAPID_SUBJECT", required: false },
+  { name: "NEXT_PUBLIC_VAPID_PUBLIC_KEY", required: false },
+  { name: "CRON_SECRET", required: true },
   { name: "AI_PROVIDER_API_KEY", required: false },
   { name: "ERROR_MONITORING_DSN", required: false },
 ] as const;
+
+/**
+ * Server-only. The scheduled reminder-discovery/outbox-processing routes
+ * refuse to run without this — see apps/web/src/server/cron/require-cron-secret.ts.
+ */
+export function getCronSecret(): string {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) throw new MissingEnvError(["CRON_SECRET"]);
+  return secret;
+}

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { importantDateInputSchema } from "@noyala/domain";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
+import { getSupabaseServiceRoleClient } from "@/server/supabase/service-role-client";
 import { reportError } from "@/server/observability/error-monitoring";
 
 export interface ImportantDateFormState {
@@ -96,8 +97,29 @@ export async function updateImportantDate(
     return { status: "error", message: error.message };
   }
 
+  await cancelScheduledDeliveries(dateId);
+
   revalidatePath(`/people/${personId}`);
   redirect(`/people/${personId}`);
+}
+
+/**
+ * Per docs/state-transitions.md's downtime/edit decision: an edited date's
+ * old computed occurrence is no longer valid, so any reminder still
+ * `scheduled` against it is cancelled rather than left to fire against
+ * stale data — the next reminder-discovery run recomputes and reschedules
+ * fresh rows under new dedup keys. `notification_deliveries` has no
+ * authenticated-write policy (Stage 1: only the service role writes it),
+ * so this one narrow write goes through the service-role client.
+ */
+async function cancelScheduledDeliveries(importantDateId: string): Promise<void> {
+  const serviceRole = getSupabaseServiceRoleClient();
+  const { error } = await serviceRole
+    .from("notification_deliveries")
+    .update({ status: "cancelled" })
+    .eq("important_date_id", importantDateId)
+    .eq("status", "scheduled");
+  if (error) reportError(error, { action: "cancelScheduledDeliveries", importantDateId });
 }
 
 export async function deleteImportantDate(personId: string, dateId: string): Promise<void> {
