@@ -11,7 +11,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 2 | Relationship core | Done (informal accessibility pass only) | `docs/stage-reports/stage-2.md` |
 | 3 | Communication intelligence | Done (OpenAI adapter unverified — no key) | `docs/stage-reports/stage-3.md` |
 | 4 | Connected contacts and communication | Partial — CSV/vCard import + device picker done, cloud OAuth and direct/scheduled send blocked on credentials | `docs/stage-reports/stage-4.md` |
-| 5 | Relationship care | Not started | — |
+| 5 | Relationship care | Done | `docs/stage-reports/stage-5.md` |
 | 6 | Shared circles and gifting | Not started | — |
 | 7 | Native mobile and voice capture | Not started | — |
 | 8 | Commercial platform and administration | Not started | — |
@@ -157,6 +157,30 @@ Genuinely blocked, not skipped:
 - **Native-push adapter** — needs `apps/mobile` (Stage 7). Web push already
   exists from Stage 2; this is additionally about a native mobile push
   token, not applicable until the mobile app exists.
+
+## Stage 5 remaining work
+
+Interaction logging, follow-up commitments (create/complete/dismiss),
+optional per-person reconnect cadence with snooze, a Home-page reconnect
+suggestion list, a due-follow-ups list, and a conversation-prep card are
+all done and verified (see `docs/stage-reports/stage-5.md`). Every exit
+gate item is met by construction: no score/streak/ranking column exists
+anywhere in the new schema, every suggestion states its reason inline
+("last contact N days ago, cadence M days") and can be snoozed or ignored
+per-person, sensitive memories are excluded from the prep card by default
+with an explicit reveal, and reconnect/follow-up suggestions are in-app
+lists rather than push/email notifications — so there's no notification
+volume to exceed in the first place for this feature. Nothing here is
+gated on external credentials, so nothing is deferred.
+
+**Known scope decision, not a gap**: follow-up/reconnect reminders don't
+go through the Stage 2 email/push pipeline (`notification_deliveries`) —
+they're an always-visible in-app list instead. Wiring them into that
+pipeline later (so a due follow-up can also arrive as a push notification)
+would need `notification_deliveries.important_date_id`'s NOT NULL FK
+either relaxed or extended to a polymorphic reference — a real schema
+change, deliberately not made speculatively this round. If that's wanted,
+it's a small, well-scoped follow-up.
 
 ## Known blockers (do not silently skip; re-check each stage)
 

@@ -15,8 +15,15 @@ import { deleteImportantDate } from "@/server/important-dates/actions";
 import { listMemoriesForPerson } from "@/server/memories/queries";
 import { archiveMemory } from "@/server/memories/actions";
 import { listRecentDraftBatchesForPerson } from "@/server/messages/queries";
+import { listInteractionsForPerson } from "@/server/interactions/queries";
+import { logInteraction, deleteInteraction } from "@/server/interactions/actions";
+import { listOpenFollowUpsForPerson } from "@/server/follow-ups/queries";
+import { createFollowUp, completeFollowUp, dismissFollowUp } from "@/server/follow-ups/actions";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { InteractionForm } from "@/components/InteractionForm";
+import { FollowUpForm } from "@/components/FollowUpForm";
+import { ConversationPrepCard } from "@/components/ConversationPrepCard";
 
 export const metadata: Metadata = { title: "Person" };
 
@@ -35,10 +42,12 @@ export default async function PersonDetailPage({
   const person = await getPerson(supabase, personId);
   if (!person) notFound();
 
-  const [dates, memories, recentDraftBatches] = await Promise.all([
+  const [dates, memories, recentDraftBatches, interactions, followUps] = await Promise.all([
     listImportantDatesForPerson(supabase, personId),
     listMemoriesForPerson(supabase, personId),
     listRecentDraftBatchesForPerson(supabase, personId),
+    listInteractionsForPerson(supabase, personId),
+    listOpenFollowUpsForPerson(supabase, personId),
   ]);
 
   const now = new Date();
@@ -55,6 +64,10 @@ export default async function PersonDetailPage({
       age: occurrence ? ageAtOccurrence(date.year, occurrence) : null,
     };
   });
+
+  const nextUpcomingDate = resolvedDates
+    .filter((d): d is typeof d & { daysUntil: number } => d.daysUntil !== null)
+    .sort((a, b) => a.daysUntil - b.daysUntil)[0];
 
   return (
     <div>
@@ -102,6 +115,15 @@ export default async function PersonDetailPage({
         </p>
       )}
       {person.notes ? <p className="text-ink mt-3 text-sm">{person.notes}</p> : null}
+
+      <ConversationPrepCard
+        memories={memories}
+        nextDate={
+          nextUpcomingDate
+            ? { label: nextUpcomingDate.date.label, daysUntil: nextUpcomingDate.daysUntil }
+            : null
+        }
+      />
 
       <section className="mt-8">
         <div className="flex items-center justify-between">
@@ -197,6 +219,88 @@ export default async function PersonDetailPage({
             </ul>
           )}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-ink font-semibold">Follow-ups</h2>
+        <p className="text-ink-muted mt-1 text-sm">
+          Private commitments — never scored, never shared.
+        </p>
+        <div className="mt-3">
+          {followUps.length === 0 ? (
+            <EmptyState title="No open follow-ups" description="Nothing you've promised is waiting." />
+          ) : (
+            <ul className="border-border divide-border divide-y rounded-lg border">
+              {followUps.map((followUp) => (
+                <li key={followUp.id} className="flex items-center justify-between gap-4 p-4">
+                  <div>
+                    <p className="text-ink text-sm">{followUp.description}</p>
+                    {followUp.dueAt ? (
+                      <p className="text-ink-muted text-xs">
+                        Due {new Date(followUp.dueAt).toLocaleDateString()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <form action={completeFollowUp.bind(null, person.id, followUp.id)}>
+                      <button
+                        type="submit"
+                        className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                      >
+                        Done
+                      </button>
+                    </form>
+                    <form action={dismissFollowUp.bind(null, person.id, followUp.id)}>
+                      <button
+                        type="submit"
+                        className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                      >
+                        Dismiss
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <FollowUpForm action={createFollowUp.bind(null, person.id)} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-ink font-semibold">Interactions</h2>
+        <p className="text-ink-muted mt-1 text-sm">
+          Calls, visits, messages and meetings you&apos;ve logged.
+        </p>
+        <div className="mt-3">
+          {interactions.length === 0 ? (
+            <EmptyState title="Nothing logged yet" description="Record a call, visit or message." />
+          ) : (
+            <ul className="border-border divide-border divide-y rounded-lg border">
+              {interactions.map((interaction) => (
+                <li key={interaction.id} className="flex items-start justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <p className="text-ink text-sm font-medium capitalize">
+                      {interaction.type} · {new Date(interaction.occurredAt).toLocaleDateString()}
+                    </p>
+                    {interaction.summary ? (
+                      <p className="text-ink-muted mt-1 text-sm">{interaction.summary}</p>
+                    ) : null}
+                  </div>
+                  <form action={deleteInteraction.bind(null, person.id, interaction.id)}>
+                    <button
+                      type="submit"
+                      className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <InteractionForm action={logInteraction.bind(null, person.id)} />
       </section>
 
       <section className="mt-8">

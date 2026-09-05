@@ -85,6 +85,21 @@ export function PersonForm({
             className="border-border rounded-md border px-3 py-2 text-sm"
           />
         </Field>
+        <Field label="Reconnect reminder" htmlFor="reconnectCadenceDays">
+          <select
+            id="reconnectCadenceDays"
+            name="reconnectCadenceDays"
+            defaultValue={defaultValues?.reconnectCadenceDays ?? ""}
+            className="border-border rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="">None</option>
+            <option value="14">Every 2 weeks</option>
+            <option value="30">Every month</option>
+            <option value="60">Every 2 months</option>
+            <option value="90">Every 3 months</option>
+            <option value="180">Every 6 months</option>
+          </select>
+        </Field>
       </div>
 
       <Field label="Notes" htmlFor="notes">

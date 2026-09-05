@@ -39,6 +39,14 @@ not "shipped behind a flag":
 - Exposing private notes to merchants, advertisers or other circle members
   by default.
 
+Stage 5's reconnect cadence and follow-up features (`docs/stage-reports/stage-5.md`)
+are the concrete place this rule gets tested: there is no score, streak,
+ranking or percentage anywhere in that schema or UI — a reconnect
+suggestion is a plain "last contact N days ago, your cadence is M days"
+statement, always explainable, always dismissible/snoozable, and only ever
+shown to the user about their own contacts (never compared across people
+or shared).
+
 ## Sending / approval policy (non-negotiable)
 
 - Silent autonomous personal messaging is prohibited.

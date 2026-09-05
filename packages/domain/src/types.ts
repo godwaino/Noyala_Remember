@@ -59,6 +59,13 @@ export interface Person {
   email: string | null;
   pronouns: string | null;
   notes: string | null;
+  /** Days between reconnects, e.g. 30/60/90 — null means no cadence set.
+   * Deliberately just a day-count: no score, streak or ranking anywhere
+   * in this schema. See docs/product.md. */
+  reconnectCadenceDays: number | null;
+  /** A user-chosen "don't suggest reconnecting before this date" — the
+   * snooze control Master Build Prompt §4 asks for. */
+  reconnectSnoozedUntil: string | null;
   archivedAt: ISODateTime | null;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
@@ -105,6 +112,34 @@ export interface Memory {
   sensitivity: MemorySensitivity;
   source: "manual";
   archivedAt: ISODateTime | null;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type InteractionType = "call" | "visit" | "message" | "meeting" | "other";
+
+export interface Interaction {
+  id: UUID;
+  userId: UUID;
+  personId: UUID;
+  type: InteractionType;
+  occurredAt: ISODateTime;
+  summary: string | null;
+  source: "manual";
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type FollowUpStatus = "open" | "completed" | "dismissed";
+
+export interface FollowUp {
+  id: UUID;
+  userId: UUID;
+  personId: UUID;
+  interactionId: UUID | null;
+  description: string;
+  dueAt: ISODateTime | null;
+  status: FollowUpStatus;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
