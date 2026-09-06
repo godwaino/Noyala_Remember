@@ -50,3 +50,16 @@ function isWordSubset(smaller: Set<string>, larger: Set<string>): boolean {
   }
   return true;
 }
+
+/**
+ * A gift idea's `linkUrl` is rendered as a live `<a href>` for every circle
+ * member sharing gift planning on that person, not just the person who
+ * entered it — a `javascript:`/`vbscript:` value would be a stored-XSS
+ * vector across users. Used both by `giftIdeaInputSchema`'s validation and
+ * again here at render time, so a row written before that validation
+ * existed (or by any future direct-write path) still can't reach the DOM
+ * as a live link.
+ */
+export function isHttpUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}

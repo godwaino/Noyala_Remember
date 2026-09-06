@@ -6,6 +6,7 @@ import {
   daysBetween,
   nextOccurrence,
   ageAtOccurrence,
+  isHttpUrl,
 } from "@noyala/domain";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { getPerson } from "@/server/people/queries";
@@ -25,6 +26,7 @@ import { revokeShare, sharePersonWithCircle } from "@/server/person-shares/actio
 import { listGiftIdeasForPerson } from "@/server/gift-ideas/queries";
 import { advanceGiftIdea, createGiftIdea, deleteGiftIdea } from "@/server/gift-ideas/actions";
 import { EmptyState } from "@/components/EmptyState";
+import { formatDate } from "@/i18n/format";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { InteractionForm } from "@/components/InteractionForm";
 import { FollowUpForm } from "@/components/FollowUpForm";
@@ -272,7 +274,7 @@ export default async function PersonDetailPage({
                     <p className="text-ink text-sm">{followUp.description}</p>
                     {followUp.dueAt ? (
                       <p className="text-ink-muted text-xs">
-                        Due {new Date(followUp.dueAt).toLocaleDateString()}
+                        Due {formatDate(followUp.dueAt)}
                       </p>
                     ) : null}
                   </div>
@@ -318,7 +320,7 @@ export default async function PersonDetailPage({
                 <li key={interaction.id} className="flex items-start justify-between gap-4 p-4">
                   <div className="min-w-0">
                     <p className="text-ink text-sm font-medium capitalize">
-                      {interaction.type} · {new Date(interaction.occurredAt).toLocaleDateString()}
+                      {interaction.type} · {formatDate(interaction.occurredAt)}
                     </p>
                     {interaction.summary ? (
                       <p className="text-ink-muted mt-1 text-sm">{interaction.summary}</p>
@@ -363,7 +365,7 @@ export default async function PersonDetailPage({
                     <p className="text-ink text-sm font-medium">{batch.occasion}</p>
                     <p className="text-ink-muted text-xs capitalize">
                       {batch.tone.replace(/_/g, " ")} · {batch.channel} ·{" "}
-                      {new Date(batch.createdAt).toLocaleDateString()}
+                      {formatDate(batch.createdAt)}
                     </p>
                   </div>
                   <Link
@@ -411,13 +413,13 @@ export default async function PersonDetailPage({
                         ? ` · ${idea.budgetCurrency} ${idea.budgetAmount.toFixed(2)}`
                         : ""}
                       {idea.deadlineAt
-                        ? ` · needed by ${new Date(idea.deadlineAt).toLocaleDateString()}`
+                        ? ` · needed by ${formatDate(idea.deadlineAt)}`
                         : ""}
                     </p>
                     {idea.description ? (
                       <p className="text-ink-muted mt-1 text-sm">{idea.description}</p>
                     ) : null}
-                    {idea.linkUrl ? (
+                    {idea.linkUrl && isHttpUrl(idea.linkUrl) ? (
                       <a
                         href={idea.linkUrl}
                         target="_blank"

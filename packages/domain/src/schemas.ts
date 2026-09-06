@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isHttpUrl } from "./gift-planning";
 
 /**
  * Validated at the server boundary (route handler / server action) before
@@ -193,7 +194,17 @@ export const giftIdeaInputSchema = z
       .optional()
       .transform((v) => v ?? null),
     deadlineAt: z.string().trim().max(10).optional().or(z.literal("")),
-    linkUrl: z.string().trim().url("Enter a valid URL").optional().or(z.literal("")),
+    // Rendered as a live `<a href>` for every circle member sharing gift
+    // planning (see the person detail page) — `.url()` alone accepts
+    // `javascript:`/`vbscript:` schemes, so this is a stored-XSS surface
+    // across users, not just a self-inflicted one. Restrict to http(s).
+    linkUrl: z
+      .string()
+      .trim()
+      .url("Enter a valid URL")
+      .refine(isHttpUrl, "Enter a valid URL")
+      .optional()
+      .or(z.literal("")),
   })
   .refine((v) => (v.budgetAmount === null) === (v.budgetCurrency === null), {
     message: "A budget needs both an amount and a currency",

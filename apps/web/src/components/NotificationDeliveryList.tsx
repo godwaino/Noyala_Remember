@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/i18n/format";
 import type { NotificationDeliveryRow } from "@/server/notifications/queries";
 
 const STATUS_LABEL: Record<NotificationDeliveryRow["status"], string> = {
@@ -24,7 +25,7 @@ export function NotificationDeliveryList({ deliveries }: { deliveries: Notificat
                 : ""}
             </p>
             <p className="text-ink-muted text-xs">
-              {new Date(delivery.scheduled_for).toLocaleString()} · {delivery.channel}
+              {formatDateTime(delivery.scheduled_for)} · {delivery.channel}
             </p>
           </div>
           <span className="text-ink-muted shrink-0 text-xs">{STATUS_LABEL[delivery.status]}</span>

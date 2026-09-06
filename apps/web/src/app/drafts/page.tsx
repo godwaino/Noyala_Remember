@@ -5,6 +5,7 @@ import type { MessageAction } from "@noyala/domain";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { listMessageHistoryForUser } from "@/server/messages/queries";
 import { EmptyState } from "@/components/EmptyState";
+import { formatDateTime } from "@/i18n/format";
 
 export const metadata: Metadata = { title: "Drafts" };
 
@@ -54,7 +55,7 @@ export default async function DraftsPage() {
                 </div>
                 <p className="text-ink mt-2 line-clamp-2 text-sm">{entry.finalContent}</p>
                 <p className="text-ink-muted mt-2 text-xs">
-                  {new Date(entry.actedAt).toLocaleString()}
+                  {formatDateTime(entry.actedAt)}
                 </p>
               </li>
             ))}
