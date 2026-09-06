@@ -119,6 +119,7 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
                 <form action={(person.archivedAt ? restorePerson : archivePerson).bind(null, person.id)}>
                   <button
                     type="submit"
+                    aria-label={`${person.archivedAt ? "Restore" : "Archive"} ${person.firstName}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >
                     {person.archivedAt ? "Restore" : "Archive"}

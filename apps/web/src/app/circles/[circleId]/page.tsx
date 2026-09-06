@@ -158,6 +158,7 @@ export default async function CircleDetailPage({
                       <form action={revokeInvitation.bind(null, circleId, invitation.id)}>
                         <button
                           type="submit"
+                          aria-label={`Revoke invitation for ${invitation.invitedEmail}`}
                           className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Revoke

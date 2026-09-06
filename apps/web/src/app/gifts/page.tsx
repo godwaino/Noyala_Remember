@@ -51,6 +51,7 @@ export default async function GiftsPage() {
                 </div>
                 <Link
                   href={`/people/${idea.personId}`}
+                  aria-label={`Open ${personNameById.get(idea.personId) ?? "someone"}'s page for ${idea.title}`}
                   className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                 >
                   Open

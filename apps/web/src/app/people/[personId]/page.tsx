@@ -184,6 +184,7 @@ export default async function PersonDetailPage({
                     <div className="flex shrink-0 gap-2">
                       <Link
                         href={`/people/${person.id}/dates/${date.id}/edit`}
+                        aria-label={`Edit ${date.label}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Edit
@@ -191,6 +192,7 @@ export default async function PersonDetailPage({
                       <form action={deleteImportantDate.bind(null, person.id, date.id)}>
                         <ConfirmSubmitButton
                           confirmMessage={`Delete "${date.label}"?`}
+                          aria-label={`Delete ${date.label}`}
                           className="border-border text-danger rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Delete
@@ -236,6 +238,7 @@ export default async function PersonDetailPage({
                     <div className="flex shrink-0 gap-2">
                       <Link
                         href={`/people/${person.id}/memories/${memory.id}/edit`}
+                        aria-label={`Edit memory: ${memory.content}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Edit
@@ -243,6 +246,7 @@ export default async function PersonDetailPage({
                       <form action={archiveMemory.bind(null, person.id, memory.id)}>
                         <button
                           type="submit"
+                          aria-label={`Archive memory: ${memory.content}`}
                           className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Archive
@@ -282,6 +286,7 @@ export default async function PersonDetailPage({
                     <form action={completeFollowUp.bind(null, person.id, followUp.id)}>
                       <button
                         type="submit"
+                        aria-label={`Mark done: ${followUp.description}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Done
@@ -290,6 +295,7 @@ export default async function PersonDetailPage({
                     <form action={dismissFollowUp.bind(null, person.id, followUp.id)}>
                       <button
                         type="submit"
+                        aria-label={`Dismiss: ${followUp.description}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Dismiss
@@ -329,6 +335,7 @@ export default async function PersonDetailPage({
                   <form action={deleteInteraction.bind(null, person.id, interaction.id)}>
                     <button
                       type="submit"
+                      aria-label={`Remove ${interaction.type} logged ${formatDate(interaction.occurredAt)}`}
                       className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                     >
                       Remove
@@ -370,6 +377,7 @@ export default async function PersonDetailPage({
                   </div>
                   <Link
                     href={`/people/${person.id}/drafts/${batch.batchId}`}
+                    aria-label={`View message options for ${batch.occasion}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >
                     View
@@ -424,6 +432,7 @@ export default async function PersonDetailPage({
                         href={idea.linkUrl}
                         target="_blank"
                         rel="noreferrer"
+                        aria-label={`View link for ${idea.title}`}
                         className="text-primary mt-1 inline-block text-xs underline"
                       >
                         View link
@@ -435,6 +444,13 @@ export default async function PersonDetailPage({
                       <form action={advanceGiftIdea.bind(null, person.id, idea.id, idea.status)}>
                         <button
                           type="submit"
+                          aria-label={`${
+                            idea.status === "idea"
+                              ? "Claim"
+                              : idea.status === "planned"
+                                ? "Mark purchased"
+                                : "Mark given"
+                          }: ${idea.title}`}
                           className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           {idea.status === "idea"
@@ -449,6 +465,7 @@ export default async function PersonDetailPage({
                       <form action={deleteGiftIdea.bind(null, person.id, idea.id)}>
                         <button
                           type="submit"
+                          aria-label={`Remove gift idea: ${idea.title}`}
                           className="border-border text-danger rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Remove

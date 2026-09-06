@@ -32,7 +32,16 @@ export const tokens = {
     surface: "#FFFFFF",
     ink: "#231F20",
     inkMuted: "#6B6560",
-    primary: "#B5654A",
+    // Stage 9 accessibility audit (live axe-core scans of /login and /)
+    // found two failures against the original #B5654A: white text on a
+    // `bg-primary` button (4.26:1) and `text-primary` on the active nav
+    // link's `bg-primary-muted/40` tint (4.27:1 once blended) — both
+    // under WCAG 2 AA's 4.5:1 minimum for normal-size text. Darkened to
+    // the same hue/saturation at 85% lightness (5.56:1 vs white, 4.68:1
+    // vs the muted tint) rather than picking an unrelated shade, so both
+    // pairings clear the threshold while it still reads as the same
+    // brand color.
+    primary: "#9A563F",
     primaryMuted: "#E7C8BB",
     accent: "#4C6B5C",
     border: "#E7E1D8",

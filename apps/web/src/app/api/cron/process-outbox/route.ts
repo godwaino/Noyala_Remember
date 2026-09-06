@@ -4,6 +4,7 @@ import { requireCronSecret } from "@/server/cron/require-cron-secret";
 import { getSupabaseServiceRoleClient } from "@/server/supabase/service-role-client";
 import { createPostgresOutboxStore } from "@/server/outbox/postgres-outbox";
 import { processReminderJob, type ReminderJobPayload } from "@/server/outbox/process-reminder-job";
+import { purgeOldRecords } from "@/server/outbox/purge-old-records";
 import { getEmailProvider } from "@/server/notifications/email-provider";
 import { getPushProvider } from "@/server/notifications/push-provider";
 import { logger } from "@/server/logger";
@@ -47,5 +48,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ processed, succeeded, failed });
+  // Piggybacked on this existing daily cron rather than adding a third
+  // Vercel cron entry for what's a cheap, idempotent, once-a-day-is-plenty
+  // cleanup — see docs/decisions/0016-retention-purge-piggybacked-on-outbox-cron.md.
+  let purged = { outboxJobsDeleted: 0, notificationDeliveriesDeleted: 0 };
+  try {
+    purged = await purgeOldRecords(serviceRole);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error("Retention purge failed", { error: message });
+  }
+
+  return NextResponse.json({ processed, succeeded, failed, purged });
 }
