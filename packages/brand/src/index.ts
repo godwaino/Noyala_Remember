@@ -69,6 +69,65 @@ export const tokens = {
 export type Brand = typeof brand;
 export type Tokens = typeof tokens;
 
+/**
+ * Mobile design tokens — the resolved system from the 2026-09-06 Claude
+ * Design refinement pass ("Noyala Mobile v2"), scoped to `apps/mobile`.
+ * Additive to `tokens` above rather than replacing it: `tokens` already
+ * ties `apps/web`'s Tailwind theme to Stage 9's a11y-audited contrast
+ * pairs (see the comment on `tokens.color.primary`), so this sits
+ * alongside it instead of changing values a live surface depends on.
+ * A richer palette and a second (serif) typeface were part of what that
+ * design pass resolved — see docs/decisions if this diverges from
+ * `tokens` again in a later pass.
+ */
+export const mobileTokens = {
+  color: {
+    background: "#FBF8F4", // Warm Ivory
+    surface: "#FFFDFC", // Soft White
+    ink: "#252229", // Deep Ink
+    inkMuted: "#706970", // Warm Grey
+    clay: "#A95A3F", // Noyala Clay — accents, active nav, occasion emphasis
+    action: "#984A36", // Action Clay — solid primary buttons w/ white text
+    deepClay: "#7E3D2F", // pressed states, strong clay-coloured text
+    border: "#E3DCD6", // Neutral Border
+    hairline: "#EDE7E1", // list-row dividers, thinner than border
+    disabledSurface: "#E8E3DE",
+    peach: "#E7C8B8", // Muted Peach — occasional warm highlights only
+    wash: "#F3EDE7", // avatar/icon chip backgrounds
+    tint: "#FBF2ED", // icon-circle tint (voice capture, etc.)
+    sage: "#4C6B5C", // Forest Sage — saved/completed/reassuring states
+    amber: "#A96F25", // Warm Amber — genuine attention states
+    red: "#B34138", // Muted Red — errors, privacy warnings, destructive
+  },
+  radius: {
+    tag: "6px",
+    control: "10px",
+    button: "12px",
+    card: "14px",
+    sheet: "16px",
+    pill: "999px",
+  },
+  spacing: {
+    xs: "4px",
+    sm: "8px",
+    smd: "12px",
+    md: "16px",
+    lg: "24px",
+    xl: "32px",
+    xxl: "40px",
+  },
+  font: {
+    sans: "Inter",
+    serif: "Newsreader",
+  },
+  minTapTarget: {
+    ios: 44,
+    android: 48,
+  },
+} as const;
+
+export type MobileTokens = typeof mobileTokens;
+
 export const primaryNav = [
   { key: "home", label: "Home", href: "/" },
   { key: "people", label: "People", href: "/people" },

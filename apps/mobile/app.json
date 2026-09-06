@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Noyala",
+    "slug": "noyala-mobile",
+    "scheme": "noyala",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FBF8F4",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.noyala.mobile",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Noyala uses the microphone only when you start a voice capture, so you can speak a memory instead of typing it.",
+        "NSContactsUsageDescription": "Noyala opens your contacts only when you choose to import people, and only imports the ones you pick."
+      }
+    },
+    "android": {
+      "package": "com.noyala.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#FBF8F4",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["RECORD_AUDIO", "READ_CONTACTS"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermissionText": "Noyala uses the microphone only when you start a voice capture."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Noyala opens your contacts only when you choose to import people."
+        }
+      ]
+    ]
+  }
+}

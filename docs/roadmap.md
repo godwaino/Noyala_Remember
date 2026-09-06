@@ -13,7 +13,7 @@ output, or an explicit documented blocker), not when code merely exists.
 | 4 | Connected contacts and communication | Partial — CSV/vCard import + device picker done, cloud OAuth and direct/scheduled send blocked on credentials | `docs/stage-reports/stage-4.md` |
 | 5 | Relationship care | Done | `docs/stage-reports/stage-5.md` |
 | 6 | Shared circles and gifting | Done | `docs/stage-reports/stage-6.md` |
-| 7 | Native mobile and voice capture | Partial — schema/RLS and domain logic done and verified; native client not started | `docs/stage-reports/stage-7.md` |
+| 7 | Native mobile and voice capture | Partial — schema/RLS/domain logic verified, and `apps/mobile` now built (all screens) and verified via Expo web + Playwright; native on-device journeys, real speech-to-text and the storage migration's live application remain open | `docs/stage-reports/stage-7.md`, `docs/stage-reports/stage-7-mobile.md` |
 | 8 | Commercial platform and administration | Not started (deliberately skipped this round — see below) | — |
 | 9 | Scale, localisation and launch readiness | Partial — security/RLS-performance hardening, accessibility, i18n foundation, retention and docs done; backup/restore drill, real CSP, and app-store assets blocked or deferred | `docs/stage-reports/stage-9.md` |
 
@@ -227,31 +227,49 @@ for the full live-verification log, including a real bug the verification
 found and fixed (`storage_path` couldn't be cleared for independent audio
 deletion — see `docs/decisions/0012-voice-captures-nullable-storage-path.md`).
 
-**Deliberately not started this round, not silently skipped** — put to the
-user directly before any of this was built, who chose to scope the round
-this way rather than build an unrunnable client:
+**Update — `apps/mobile` now exists.** A later round found that Expo also
+targets web via `react-native-web`, and this environment does have
+Chromium — so the app's real behavior (not just its typecheck) could be
+exercised via Playwright even without a device/simulator. `apps/mobile`
+was built (Expo/React Native/TypeScript, importing `packages/domain`/
+`packages/brand`), implementing every screen from the Claude Design
+handoff (`Noyala Mobile v2.dc.html`): onboarding, Home, People, Person,
+Calendar, Message Studio + handoff, Drafts/History, Voice capture →
+review, Contacts import, Circles/Sharing, Gifts, Settings. Two new
+bearer-token-authenticated routes in `apps/web`
+(`/api/mobile/message-drafts`, `/api/mobile/voice-captures/[id]/transcribe`,
+plus `/api/mobile/account/delete`) cover the operations that need a
+server-side secret; everything else is a direct, RLS-scoped Supabase call
+from the phone, same as the web app's browser client. Full detail,
+including exactly what is and isn't verified without a real device, in
+`docs/stage-reports/stage-7-mobile.md`.
 
-- **The Expo/React Native mobile app itself.** This environment has no
-  iOS/Android simulator or device — a scaffolded app could be typechecked
-  but never actually run, and Stage 7's exit gate explicitly requires
-  "essential journeys pass on supported iOS and Android targets." Building
-  a client no one can run or test here would be unverified scope, not
-  delivered scope, exactly the "fake success" `review.md` warned against.
+**Still deliberately not done, not silently skipped:**
+
+- **On-device verification.** No iOS/Android simulator or device exists in
+  this environment — Stage 7's exit gate ("essential journeys pass on
+  supported iOS and Android targets") isn't met by browser verification
+  alone. Native-only surfaces (real mic/contacts permission prompts, the
+  native contact picker, share-sheet handoffs, push tokens) are
+  implemented against their documented Expo APIs but unverified on a real
+  device.
 - **Real speech-to-text.** No provider credential exists in this
   environment (the same gap Stage 3 hit with `AI_PROVIDER_API_KEY`) — the
   `TranscriptionProvider` interface exists so a real adapter is a drop-in
   implementation later, not a redesign.
-- Native push, device-contact permission flows, and share-sheet handoffs
-  on a real device — all need the same missing mobile runtime.
+- **The voice-captures storage bucket migration is written but unapplied**
+  to the live project — same `supabase link`/service-role access gap as
+  every other migration in this repo (see "Known blockers" below).
+- **Native push token registration.** Permission is requested for real;
+  no device token is registered anywhere yet — `push_subscriptions` is
+  shaped for Web Push, not a native Expo token.
 
-When a device/simulator or CI runner with mobile testing becomes
-available, the remaining Stage 7 work is: scaffold `apps/mobile`
-(Expo/React Native) importing `packages/domain`/`packages/brand`; build
-the voice-capture record → upload → transcribe → review screens against
-the already-built schema and domain contracts; wire device contacts
-(reusing Stage 4's CSV/vCard-adjacent parsing logic) and share-sheet
-handoffs (reusing Stage 3's WhatsApp/SMS/email URL-building logic); then
-verify the exit gate's on-device journeys for real.
+When a device/simulator becomes available, what's left is: apply the new
+storage migration, run the actual on-device journeys (voice record →
+upload → transcribe → review; contacts import; message handoff) for real,
+register a real push token, and swap in real transcription/AI providers —
+see `docs/stage-reports/stage-7-mobile.md`'s "What's next" for the full
+list. None of it requires re-architecting anything already built.
 
 ## Stage 8 — deliberately skipped this round
 
@@ -395,6 +413,12 @@ verified — see `docs/stage-reports/stage-9.md` for the full log.
   links Message Studio opens (`wa.me`/`sms:`/`mailto:`) are implemented
   but never confirmed against a real phone/app combination — no
   device/browser available in this environment for that.
-- **No mobile app yet.** `apps/mobile` is not created until Stage 7;
-  `packages/domain` is kept framework-free specifically so that stage
-  doesn't require reworking shared logic.
+- **`apps/mobile` exists but is unverified on a real device or
+  simulator.** See `docs/stage-reports/stage-7-mobile.md` for exactly
+  what was and wasn't verified via Expo web + Playwright instead.
+- **The `voice-captures` storage bucket migration
+  (`20260906000200_voice_captures_storage_bucket.sql`) is written but not
+  applied** to the live project — same access gap as every other
+  migration here; needs `supabase db push` (or equivalent) from someone
+  with project access before mobile voice capture can upload anything for
+  real.
