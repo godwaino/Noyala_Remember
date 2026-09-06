@@ -71,6 +71,7 @@ export default async function CirclesPage() {
                   <p className="text-ink text-sm font-medium">{circle.name}</p>
                   <Link
                     href={`/circles/${circle.id}`}
+                    aria-label={`Open ${circle.name}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >
                     Open

@@ -3,6 +3,7 @@ import { unstable_rethrow } from "next/navigation";
 import { brand } from "@noyala/brand";
 import { bucketFollowUp, sortFollowUpsForDisplay } from "@noyala/domain";
 import { EmptyState } from "@/components/EmptyState";
+import { formatDate } from "@/i18n/format";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { reportError } from "@/server/observability/error-monitoring";
 import { listUpcomingDatesForUser } from "@/server/important-dates/queries";
@@ -143,7 +144,7 @@ export default async function HomePage() {
                       {personFirstName}
                     </Link>
                     {followUp.dueAt
-                      ? ` · due ${new Date(followUp.dueAt).toLocaleDateString()}`
+                      ? ` · due ${formatDate(followUp.dueAt)}`
                       : ""}
                   </p>
                 </div>

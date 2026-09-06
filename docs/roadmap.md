@@ -14,8 +14,8 @@ output, or an explicit documented blocker), not when code merely exists.
 | 5 | Relationship care | Done | `docs/stage-reports/stage-5.md` |
 | 6 | Shared circles and gifting | Done | `docs/stage-reports/stage-6.md` |
 | 7 | Native mobile and voice capture | Partial — schema/RLS and domain logic done and verified; native client not started | `docs/stage-reports/stage-7.md` |
-| 8 | Commercial platform and administration | Not started | — |
-| 9 | Scale, localisation and launch readiness | Not started | — |
+| 8 | Commercial platform and administration | Not started (deliberately skipped this round — see below) | — |
+| 9 | Scale, localisation and launch readiness | Partial — security/RLS-performance hardening, accessibility, i18n foundation, retention and docs done; backup/restore drill, real CSP, and app-store assets blocked or deferred | `docs/stage-reports/stage-9.md` |
 
 ## Dependency map
 
@@ -253,6 +253,62 @@ the already-built schema and domain contracts; wire device contacts
 handoffs (reusing Stage 3's WhatsApp/SMS/email URL-building logic); then
 verify the exit gate's on-device journeys for real.
 
+## Stage 8 — deliberately skipped this round
+
+Put to the user directly before starting: proceed with Stage 8
+(billing/entitlements/admin console, building what's genuinely verifiable
+without a real payment-provider account, per the pattern used for every
+other credential-gated stage) or skip it for now. The user chose to skip
+it and go straight to Stage 9 hardening instead. Nothing in Stage 8 exists
+— no `plans`/`entitlements`/`usage_ledger` tables, no billing provider
+interface, no support console. This is a scope decision, not a technical
+blocker; see the dependency map above for why Stage 8 doesn't block 2–7,
+and note that Stage 9's own hardening pass therefore has nothing to
+harden yet for billing, entitlements, or admin surfaces specifically —
+covered instead for every stage that *does* exist (0–7).
+
+## Stage 9 remaining work
+
+Security/RLS-performance hardening (a real role-self-escalation bug found
+and fixed, plus five smaller findings), an accessibility pass (one real
+contrast bug found and fixed live, nine screen-reader issues fixed by
+manual review), an i18n formatting foundation, a retention policy for two
+previously-unbounded tables, and four new operational docs
+(`docs/disaster-recovery.md`, `docs/data-protection.md`,
+`docs/production-readiness.md`, `docs/launch-plan.md`) are done and
+verified — see `docs/stage-reports/stage-9.md` for the full log.
+
+**Genuinely open, not silently skipped:**
+
+- **Whether this Supabase project has automatic backups/PITR at all is
+  unconfirmed** — the single highest-priority item out of this stage, and
+  a real production risk if the project is on Supabase's Free tier (no
+  automatic backups). See `docs/disaster-recovery.md`. Needs the account
+  owner to check the Supabase Dashboard's plan/add-ons.
+- **A real backup/restore drill was not performed** — the only two
+  mechanisms available (`create_branch`, `restore_project`) either can't
+  copy production data (so couldn't prove anything about data restore) or
+  operate destructively on the live project with a real user on it. See
+  `docs/disaster-recovery.md` for the full reasoning.
+- **A real Content-Security-Policy was not added** — only
+  CSP-independent baseline headers (`X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`,
+  `Permissions-Policy`). A real CSP needs nonce wiring verified
+  page-by-page in a real browser.
+- **Authenticated pages were reviewed manually, not live-scanned** — no
+  service-role key or real inbox exists in this environment to mint an
+  authenticated browser session (and brute-forcing the OTP hash to get
+  one was deliberately ruled out as an auth-bypass technique, not a
+  legitimate test method). The two pages reachable without a session were
+  live axe-core-scanned and are clean.
+- **No error-monitoring provider, no `CRON_SECRET`/VAPID/AI keys set** —
+  same known blockers as earlier stages, re-confirmed still open; see
+  below.
+- **Full i18n (translated UI strings, a second locale), app-store launch
+  assets, a support console** — real, larger, separately-scoped work
+  (Stage 7/8-adjacent in the last case) rather than something to build
+  speculatively inside a hardening pass.
+
 ## Known blockers (do not silently skip; re-check each stage)
 
 - **Live Supabase project connected, but without its service-role key in
@@ -289,6 +345,15 @@ verify the exit gate's on-device journeys for real.
   Brevo as a custom SMTP provider for better deliverability — that fixes
   *sending*, not the link-prefetching problem, so the template change is
   still required.
+- **Whether this Supabase project has any automatic backups is
+  unconfirmed** (added Stage 9). Supabase's Free tier has none at all;
+  Pro and above get daily backups by default with PITR as an add-on. This
+  environment's tools don't expose the project's billing plan. Check
+  Supabase Dashboard → Project Settings → Add-ons/Backups — if the
+  project is on Free (likely, given no billing setup appears anywhere
+  else in this repo's history), there is currently no way to recover from
+  data loss beyond what users re-enter themselves. See
+  `docs/disaster-recovery.md`.
 - **`CRON_SECRET` needed for the reminder scheduler.** `/api/cron/discover-reminders`
   and `/api/cron/process-outbox` 401 without a matching
   `Authorization: Bearer <CRON_SECRET>` header. Set it in the deployment

@@ -20,12 +20,25 @@ const REDACTED_KEYS = new Set([
   "display_name",
 ]);
 
+// Field-name redaction alone misses PII that arrives inside a field never
+// meant to carry it — e.g. a caught `Error.message` or a provider's raw
+// error-response body, both logged verbatim elsewhere in this codebase,
+// can echo back a contact's email address (a provider commonly quotes the
+// offending recipient in a rejection message). Scrub anything
+// email-shaped out of every string value, regardless of its key, as a
+// second layer under the key-based redaction above.
+const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+
 type LogFields = Record<string, unknown>;
+
+function scrubValue(value: unknown): unknown {
+  return typeof value === "string" ? value.replace(EMAIL_PATTERN, "[redacted-email]") : value;
+}
 
 function redact(fields: LogFields): LogFields {
   const safe: LogFields = {};
   for (const [key, value] of Object.entries(fields)) {
-    safe[key] = REDACTED_KEYS.has(key) ? "[redacted]" : value;
+    safe[key] = REDACTED_KEYS.has(key) ? "[redacted]" : scrubValue(value);
   }
   return safe;
 }

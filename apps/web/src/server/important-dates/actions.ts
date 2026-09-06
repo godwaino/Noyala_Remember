@@ -78,7 +78,7 @@ export async function updateImportantDate(
   }
 
   const supabase = await getSupabaseServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("important_dates")
     .update({
       type: parsed.data.type,
@@ -90,11 +90,21 @@ export async function updateImportantDate(
       reminder_offsets: parsed.data.reminderOffsets,
       timezone: parsed.data.timezone,
     })
-    .eq("id", dateId);
+    .eq("id", dateId)
+    .select("id");
 
   if (error) {
     reportError(error, { action: "updateImportantDate", dateId });
     return { status: "error", message: error.message };
+  }
+
+  // A 0-row update (e.g. `dateId` belongs to another user, silently
+  // filtered by RLS rather than rejected) must not fall through to
+  // `cancelScheduledDeliveries`, which writes via the service-role client
+  // and would otherwise cancel another user's reminder with no ownership
+  // check of its own — see docs/decisions/0014-important-date-update-ownership-check.md.
+  if (!data || data.length === 0) {
+    return { status: "error", message: "That date could not be found." };
   }
 
   await cancelScheduledDeliveries(dateId);

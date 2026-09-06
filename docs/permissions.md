@@ -42,9 +42,16 @@ answered here as implemented, not as intent.
 
 **Roles** (Master Build Prompt §11): `owner`, `organiser`, `viewer` on
 `circle_members`. Role is fixed at invitation time; there is no in-place
-role-change RLS path — verified live that a direct `UPDATE
-circle_members SET role = ...` affects zero rows even for the circle
-owner. Changing someone's role is revoke-and-reinvite by design.
+role-change path. This is enforced by a `BEFORE UPDATE` trigger
+(`circle_members_prevent_identity_change`), not by RLS alone — an earlier
+version of this claim ("a direct `UPDATE circle_members SET role = ...`
+affects zero rows even for the circle owner") was verified only for the
+owner updating *someone else's* row, which `circle_members_update_self`'s
+`user_id = auth.uid()` scoping does correctly block. It did not block a
+member updating their *own* row's `role` — Stage 9's security audit found
+that path let any member self-promote to `owner`. See
+`docs/decisions/0015-circle-members-role-immutability-trigger.md`.
+Changing someone's role is revoke-and-reinvite by design.
 
 | Resource | View | Edit/Manage | Notes |
 | --- | --- | --- | --- |

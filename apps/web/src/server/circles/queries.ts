@@ -120,8 +120,17 @@ export async function listMyPendingInvitations(
     .from("circle_invitations")
     .select("*")
     .eq("status", "pending")
-    .ilike("invited_email", userEmail)
+    // `ilike` for case-insensitivity (matching the RLS policies' own
+    // `lower(invited_email) = lower(auth.email())`), but `%`/`_` in
+    // `userEmail` would otherwise be treated as wildcards rather than
+    // literal characters — escape them first so this is an exact
+    // case-insensitive match, not a broadened pattern search.
+    .ilike("invited_email", escapeIlikePattern(userEmail))
     .order("created_at", { ascending: false });
   if (error) throw new Error(`Failed to list invitations: ${error.message}`);
   return (data as CircleInvitationRow[]).map(toCircleInvitation);
+}
+
+function escapeIlikePattern(value: string): string {
+  return value.replace(/[%_\\]/g, (char) => `\\${char}`);
 }

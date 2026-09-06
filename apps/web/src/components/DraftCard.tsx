@@ -61,6 +61,7 @@ export function DraftCard({
         rows={5}
         value={content}
         onChange={(e) => setContent(e.target.value)}
+        aria-label={`${draft.label} message text`}
         className="border-border rounded-md border px-3 py-2 text-sm"
       />
       <div className="flex flex-wrap gap-2">
@@ -122,7 +123,9 @@ export function DraftCard({
         </button>
       </div>
       {lastAction ? (
-        <p className="text-ink-muted text-xs">{ACTION_LABEL[lastAction]}</p>
+        <p role="status" className="text-ink-muted text-xs">
+          {ACTION_LABEL[lastAction]}
+        </p>
       ) : null}
     </div>
   );

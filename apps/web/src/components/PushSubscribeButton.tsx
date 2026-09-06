@@ -83,7 +83,11 @@ export function PushSubscribeButton({ vapidPublicKey }: { vapidPublicKey: string
       >
         {status === "subscribed" ? "Push notifications enabled" : "Enable push notifications"}
       </button>
-      {message ? <p className="text-ink-muted mt-2 text-sm">{message}</p> : null}
+      {message ? (
+        <p role="status" className="text-ink-muted mt-2 text-sm">
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }

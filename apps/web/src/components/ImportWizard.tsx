@@ -178,6 +178,7 @@ export function ImportWizard({ existingPeople }: { existingPeople: ExistingPerso
             <div key={index} className="flex items-center justify-between gap-4 p-3">
               <span className="text-ink text-sm font-medium">{header || `Column ${index + 1}`}</span>
               <select
+                aria-label={`Field for column "${header || `Column ${index + 1}`}"`}
                 value={mapping[index] ?? "ignore"}
                 onChange={(e) =>
                   setMapping((prev) => ({ ...prev, [index]: e.target.value as PersonImportField }))

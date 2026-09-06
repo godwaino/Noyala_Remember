@@ -6,6 +6,7 @@ import {
   daysBetween,
   nextOccurrence,
   ageAtOccurrence,
+  isHttpUrl,
 } from "@noyala/domain";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { getPerson } from "@/server/people/queries";
@@ -25,6 +26,7 @@ import { revokeShare, sharePersonWithCircle } from "@/server/person-shares/actio
 import { listGiftIdeasForPerson } from "@/server/gift-ideas/queries";
 import { advanceGiftIdea, createGiftIdea, deleteGiftIdea } from "@/server/gift-ideas/actions";
 import { EmptyState } from "@/components/EmptyState";
+import { formatDate } from "@/i18n/format";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { InteractionForm } from "@/components/InteractionForm";
 import { FollowUpForm } from "@/components/FollowUpForm";
@@ -182,6 +184,7 @@ export default async function PersonDetailPage({
                     <div className="flex shrink-0 gap-2">
                       <Link
                         href={`/people/${person.id}/dates/${date.id}/edit`}
+                        aria-label={`Edit ${date.label}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Edit
@@ -189,6 +192,7 @@ export default async function PersonDetailPage({
                       <form action={deleteImportantDate.bind(null, person.id, date.id)}>
                         <ConfirmSubmitButton
                           confirmMessage={`Delete "${date.label}"?`}
+                          aria-label={`Delete ${date.label}`}
                           className="border-border text-danger rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Delete
@@ -234,6 +238,7 @@ export default async function PersonDetailPage({
                     <div className="flex shrink-0 gap-2">
                       <Link
                         href={`/people/${person.id}/memories/${memory.id}/edit`}
+                        aria-label={`Edit memory: ${memory.content}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Edit
@@ -241,6 +246,7 @@ export default async function PersonDetailPage({
                       <form action={archiveMemory.bind(null, person.id, memory.id)}>
                         <button
                           type="submit"
+                          aria-label={`Archive memory: ${memory.content}`}
                           className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Archive
@@ -272,7 +278,7 @@ export default async function PersonDetailPage({
                     <p className="text-ink text-sm">{followUp.description}</p>
                     {followUp.dueAt ? (
                       <p className="text-ink-muted text-xs">
-                        Due {new Date(followUp.dueAt).toLocaleDateString()}
+                        Due {formatDate(followUp.dueAt)}
                       </p>
                     ) : null}
                   </div>
@@ -280,6 +286,7 @@ export default async function PersonDetailPage({
                     <form action={completeFollowUp.bind(null, person.id, followUp.id)}>
                       <button
                         type="submit"
+                        aria-label={`Mark done: ${followUp.description}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Done
@@ -288,6 +295,7 @@ export default async function PersonDetailPage({
                     <form action={dismissFollowUp.bind(null, person.id, followUp.id)}>
                       <button
                         type="submit"
+                        aria-label={`Dismiss: ${followUp.description}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
                         Dismiss
@@ -318,7 +326,7 @@ export default async function PersonDetailPage({
                 <li key={interaction.id} className="flex items-start justify-between gap-4 p-4">
                   <div className="min-w-0">
                     <p className="text-ink text-sm font-medium capitalize">
-                      {interaction.type} · {new Date(interaction.occurredAt).toLocaleDateString()}
+                      {interaction.type} · {formatDate(interaction.occurredAt)}
                     </p>
                     {interaction.summary ? (
                       <p className="text-ink-muted mt-1 text-sm">{interaction.summary}</p>
@@ -327,6 +335,7 @@ export default async function PersonDetailPage({
                   <form action={deleteInteraction.bind(null, person.id, interaction.id)}>
                     <button
                       type="submit"
+                      aria-label={`Remove ${interaction.type} logged ${formatDate(interaction.occurredAt)}`}
                       className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                     >
                       Remove
@@ -363,11 +372,12 @@ export default async function PersonDetailPage({
                     <p className="text-ink text-sm font-medium">{batch.occasion}</p>
                     <p className="text-ink-muted text-xs capitalize">
                       {batch.tone.replace(/_/g, " ")} · {batch.channel} ·{" "}
-                      {new Date(batch.createdAt).toLocaleDateString()}
+                      {formatDate(batch.createdAt)}
                     </p>
                   </div>
                   <Link
                     href={`/people/${person.id}/drafts/${batch.batchId}`}
+                    aria-label={`View message options for ${batch.occasion}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >
                     View
@@ -411,17 +421,18 @@ export default async function PersonDetailPage({
                         ? ` · ${idea.budgetCurrency} ${idea.budgetAmount.toFixed(2)}`
                         : ""}
                       {idea.deadlineAt
-                        ? ` · needed by ${new Date(idea.deadlineAt).toLocaleDateString()}`
+                        ? ` · needed by ${formatDate(idea.deadlineAt)}`
                         : ""}
                     </p>
                     {idea.description ? (
                       <p className="text-ink-muted mt-1 text-sm">{idea.description}</p>
                     ) : null}
-                    {idea.linkUrl ? (
+                    {idea.linkUrl && isHttpUrl(idea.linkUrl) ? (
                       <a
                         href={idea.linkUrl}
                         target="_blank"
                         rel="noreferrer"
+                        aria-label={`View link for ${idea.title}`}
                         className="text-primary mt-1 inline-block text-xs underline"
                       >
                         View link
@@ -433,6 +444,13 @@ export default async function PersonDetailPage({
                       <form action={advanceGiftIdea.bind(null, person.id, idea.id, idea.status)}>
                         <button
                           type="submit"
+                          aria-label={`${
+                            idea.status === "idea"
+                              ? "Claim"
+                              : idea.status === "planned"
+                                ? "Mark purchased"
+                                : "Mark given"
+                          }: ${idea.title}`}
                           className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           {idea.status === "idea"
@@ -447,6 +465,7 @@ export default async function PersonDetailPage({
                       <form action={deleteGiftIdea.bind(null, person.id, idea.id)}>
                         <button
                           type="submit"
+                          aria-label={`Remove gift idea: ${idea.title}`}
                           className="border-border text-danger rounded-md border px-3 py-1.5 text-xs font-medium"
                         >
                           Remove
