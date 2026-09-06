@@ -1,23 +1,11 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  isRateLimited,
-  selectMessageFacts,
-  type MessageAction,
-  type MessageChannel,
-  type MessageGenerationContext,
-  type MessageTone,
-} from "@noyala/domain";
+import type { MessageAction, MessageChannel, MessageTone } from "@noyala/domain";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
-import { getMessageProvider } from "@/server/ai/message-provider";
-import { getPerson } from "@/server/people/queries";
-import { listMemoriesForPerson } from "@/server/memories/queries";
-import { getImportantDate } from "@/server/important-dates/queries";
 import { reportError } from "@/server/observability/error-monitoring";
-import type { DraftGenerationMetadata } from "./mappers";
+import { generateDraftsCore } from "./generate";
 
 export interface GenerateDraftFormState {
   status: "idle" | "error";
@@ -33,11 +21,6 @@ const TONES: MessageTone[] = [
   "custom",
 ];
 const CHANNELS: MessageChannel[] = ["whatsapp", "sms", "email"];
-
-/** A technical safety cap, not a validated product number — see
- * docs/integrations.md's "Acceptance budgets" section. */
-const RATE_LIMIT_MAX_PER_HOUR = Number(process.env.AI_GENERATION_MAX_PER_HOUR ?? 20);
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 export async function generateMessageDraft(
   personId: string,
@@ -57,122 +40,26 @@ export async function generateMessageDraft(
   const importantDateId = String(formData.get("importantDateId") ?? "").trim() || null;
   const selectedMemoryIds = formData.getAll("memoryIds").map(String);
 
-  if (!occasion) return { status: "error", message: "Occasion is required" };
   if (!TONES.includes(tone)) return { status: "error", message: "Choose a tone" };
   if (!CHANNELS.includes(channel)) return { status: "error", message: "Choose a channel" };
 
-  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-  const { data: recent, error: recentError } = await supabase
-    .from("message_drafts")
-    .select("created_at")
-    .eq("user_id", user.id)
-    .gte("created_at", since);
-  if (recentError) {
-    reportError(recentError, { action: "generateMessageDraft.rateLimitCheck", personId });
-    return { status: "error", message: "Something went wrong. Please try again." };
-  }
-  const recentTimestamps = ((recent ?? []) as { created_at: string }[]).map(
-    (r) => new Date(r.created_at),
-  );
-  if (isRateLimited(recentTimestamps, new Date(), RATE_LIMIT_MAX_PER_HOUR, RATE_LIMIT_WINDOW_MS)) {
-    return {
-      status: "error",
-      message: "You've reached the message-generation limit for now — try again shortly.",
-    };
-  }
-
-  const [person, memories, importantDate, previousMessages] = await Promise.all([
-    getPerson(supabase, personId),
-    listMemoriesForPerson(supabase, personId),
-    importantDateId ? getImportantDate(supabase, importantDateId) : Promise.resolve(null),
-    supabase
-      .from("message_history")
-      .select("final_content")
-      .eq("person_id", personId)
-      .order("acted_at", { ascending: false })
-      .limit(2),
-  ]);
-  if (!person) return { status: "error", message: "Person not found" };
-
-  const facts = selectMessageFacts(memories, selectedMemoryIds);
-  const previousMessageSnippets = (
-    (previousMessages.data ?? []) as { final_content: string }[]
-  ).map((row) => row.final_content.slice(0, 200));
-
-  const context: MessageGenerationContext = {
-    recipientDisplayName: person.nickname || person.firstName,
-    relationshipType: person.relationshipType,
+  const result = await generateDraftsCore(supabase, user.id, {
+    personId,
     occasion,
     tone,
     channel,
-    facts,
-    customInstruction: customInstruction ?? undefined,
-    previousMessageSnippets:
-      previousMessageSnippets.length > 0 ? previousMessageSnippets : undefined,
-  };
-
-  const provider = getMessageProvider();
-  const outcome = await provider.generateMessages(context);
-
-  if (!outcome.success) {
-    reportError(new Error(outcome.reason), {
-      action: "generateMessageDraft",
-      personId,
-      reason: outcome.reason,
-    });
-    return {
-      status: "error",
-      message: "Couldn't generate messages right now — please try again.",
-    };
-  }
-
-  const batchId = randomUUID();
-  const contextSnapshot = {
-    occasion,
-    tone,
-    channel,
+    importantDateId,
+    memoryIds: selectedMemoryIds,
     customInstruction,
-    importantDateId: importantDate?.id ?? null,
-    // Exactly the facts actually used — Master Build Prompt §5's "immutable
-    // context snapshot containing only the selected facts used."
-    facts,
-  };
-
-  const rows = outcome.options.map((option) => {
-    const metadata: DraftGenerationMetadata = {
-      batchId,
-      optionLabel: option.label,
-      provider: outcome.provider,
-      generation: {
-        occasion,
-        tone,
-        channel,
-        customInstruction,
-        importantDateId: importantDate?.id ?? null,
-        selectedMemoryIds,
-      },
-    };
-    return {
-      user_id: user.id,
-      person_id: personId,
-      important_date_id: importantDate?.id ?? null,
-      tone,
-      channel,
-      context_snapshot: contextSnapshot,
-      content: option.content,
-      generation_status: "succeeded" as const,
-      model_metadata: { ...metadata, ...outcome.modelMetadata },
-    };
   });
 
-  const { error: insertError } = await supabase.from("message_drafts").insert(rows);
-  if (insertError) {
-    reportError(insertError, { action: "generateMessageDraft.insert", personId });
-    return { status: "error", message: "Couldn't save the generated drafts." };
+  if (!result.ok) {
+    reportError(new Error(result.message), { action: "generateMessageDraft", personId });
+    return { status: "error", message: result.message };
   }
 
   revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}/drafts/${batchId}`);
+  redirect(`/people/${personId}/drafts/${result.batchId}`);
 }
 
 export async function updateMessageDraftContent(

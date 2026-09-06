@@ -18,6 +18,7 @@ disposable prototype — see `docs/roadmap.md` for the stage list and
 
 ```
 apps/web/            Next.js App Router web app (the PWA)
+apps/mobile/          Expo/React Native app (iOS/Android) — see apps/mobile/.env.example
 packages/brand/       Product name, tagline, metadata, design tokens
 packages/domain/       Framework-free shared types, validation, pure logic
 supabase/migrations/  SQL migrations (schema + Row Level Security)
@@ -99,6 +100,24 @@ pnpm --filter @noyala/web validate-env
 which fails loudly if a required variable is missing — unlike the app
 itself, which is deliberately lenient at build time (see above) so CI
 doesn't need real secrets.
+
+## Mobile app (`apps/mobile`)
+
+```bash
+cp apps/mobile/.env.example apps/mobile/.env.local   # same Supabase project as apps/web
+pnpm --filter @noyala/mobile web       # runs in a browser via react-native-web
+pnpm --filter @noyala/mobile ios       # needs Xcode/a simulator
+pnpm --filter @noyala/mobile android   # needs Android Studio/a simulator or device
+pnpm --filter @noyala/mobile typecheck
+```
+
+AI message generation and voice transcription go through two
+bearer-token-authenticated routes in `apps/web`
+(`/api/mobile/message-drafts`, `/api/mobile/voice-captures/[id]/transcribe`)
+rather than a direct Supabase call, since both need a server-side secret —
+set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env.local` to wherever
+`apps/web` is running. See `docs/stage-reports/stage-7-mobile.md` for what's
+built and what's verified vs. native-only/unverified without a real device.
 
 ## CI
 
