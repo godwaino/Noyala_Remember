@@ -1,0 +1,16 @@
+<!-- Noyala brand mark. Geometry mirrors
+     src/components/marketing/NoyalaLogo.tsx — change both together.
+     Padded and set on the brand ivory so it reads as a tab icon rather
+     than a bare stroke on whatever the browser paints behind it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" rx="20" fill="#FBF8F4"/>
+  <!-- Mark bbox (including the 7.6 stroke) is x 6.2..52.8, y 6.2..47.8,
+       so centre = (29.5, 27). Scaled 1.3 and offset so that centre lands
+       at (48, 48), leaving even optical padding on all four sides. -->
+  <g transform="translate(9.65 12.9) scale(1.3)">
+    <circle cx="11" cy="11" r="4.8" fill="#A95A3F"/>
+    <path d="M11 23v9c0 9 19 9 19 0V23c0-9 19-9 19 0v21"
+          fill="none" stroke="#A95A3F" stroke-width="7.6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
