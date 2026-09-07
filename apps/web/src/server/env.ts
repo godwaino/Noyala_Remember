@@ -51,6 +51,7 @@ export const ENV_VARS = [
   { name: "NEXT_PUBLIC_APP_URL", required: true },
   { name: "EMAIL_PROVIDER_API_KEY", required: false },
   { name: "EMAIL_FROM_ADDRESS", required: false },
+  { name: "SUPPORT_INBOX_EMAIL", required: false },
   { name: "VAPID_PUBLIC_KEY", required: false },
   { name: "VAPID_PRIVATE_KEY", required: false },
   { name: "VAPID_SUBJECT", required: false },

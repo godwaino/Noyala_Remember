@@ -70,7 +70,7 @@ export default async function CirclesPage() {
                 <li key={circle.id} className="flex items-center justify-between gap-4 p-4">
                   <p className="text-ink text-sm font-medium">{circle.name}</p>
                   <Link
-                    href={`/circles/${circle.id}`}
+                    href={`/app/circles/${circle.id}`}
                     aria-label={`Open ${circle.name}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >

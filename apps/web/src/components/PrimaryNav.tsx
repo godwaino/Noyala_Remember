@@ -14,7 +14,7 @@ export function PrimaryNav() {
     >
       {primaryNav.map((item) => {
         const isActive =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
 
         return (
           <Link

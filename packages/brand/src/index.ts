@@ -128,12 +128,63 @@ export const mobileTokens = {
 
 export type MobileTokens = typeof mobileTokens;
 
+/**
+ * Web marketing/account design tokens — the resolved system from the
+ * 2026-09-07 Claude Design pass ("Noyala Web"), scoped to the public
+ * marketing/account pages under `apps/web/src/app/(marketing)`. Additive
+ * to `tokens` above for the same reason `mobileTokens` is: `tokens` still
+ * backs the signed-in `/app/*` product surface and its a11y-audited
+ * contrast pairs, so this is a parallel palette rather than a change to
+ * it. Wired into Tailwind under a `marketing-` prefix — see
+ * apps/web/tailwind.config.ts.
+ */
+export const webTokens = {
+  color: {
+    ivory: "#FBF8F4", // Warm Ivory — page background
+    paper: "#FFFDFC", // card/input surfaces, alternating sections
+    wash: "#F3EDE7", // avatar fills, quiet chips, one landing band
+    ink: "#252229", // Deep Ink — primary text, phone bezels
+    body: "#4A4550", // long-form body copy
+    grey: "#706970", // secondary and meta text
+    border: "#E3DCD6", // card and input borders
+    hairline: "#EDE7E1", // list row dividers
+    clay: "#A95A3F", // accent, active borders, timeline dots, spinners
+    clayText: "#8F4530", // small Clay-coloured text (contrast-safe on ivory)
+    action: "#984A36", // primary buttons, links
+    actionHover: "#7E3D2F", // link hover
+    clayWash: "#FBF2ED", // selected-state fill
+    sage: "#4C6B5C", // closing CTA band, success accents
+    sageDeep: "#3C5A4C", // success text
+    sageBorder: "#C7D6CB", // success container border
+    sageWash: "#EFF4F0", // success container fill
+    red: "#B34138", // destructive and error text
+    redBorder: "#EFD6D3", // error container border
+    redWash: "#FAEDEC", // error container fill
+    destructiveBorder: "#E0C4C0", // outlined destructive button
+    disabled: "#DCC9C6", // disabled primary button fill
+    placeholderBorder: "#C9BFB6", // dashed placeholder boxes
+  },
+  font: {
+    sans: "Inter",
+    serif: "Newsreader",
+  },
+} as const;
+
+export type WebTokens = typeof webTokens;
+
+/**
+ * The signed-in product app's own nav — mounted only under `/app/*`
+ * (apps/web/src/app/app/layout.tsx). Since the 2026-09-07 web redesign,
+ * `/` and its siblings (`/download`, `/pricing`, `/privacy`, `/support`,
+ * `/account`, …) are the public marketing/account site with its own nav
+ * (apps/web/src/app/(marketing)/layout.tsx) — see docs/decisions.
+ */
 export const primaryNav = [
-  { key: "home", label: "Home", href: "/" },
-  { key: "people", label: "People", href: "/people" },
-  { key: "calendar", label: "Calendar", href: "/calendar" },
-  { key: "drafts", label: "Drafts", href: "/drafts" },
-  { key: "gifts", label: "Gifts", href: "/gifts" },
-  { key: "circles", label: "Circles", href: "/circles" },
-  { key: "settings", label: "Settings", href: "/settings" },
+  { key: "home", label: "Home", href: "/app" },
+  { key: "people", label: "People", href: "/app/people" },
+  { key: "calendar", label: "Calendar", href: "/app/calendar" },
+  { key: "drafts", label: "Drafts", href: "/app/drafts" },
+  { key: "gifts", label: "Gifts", href: "/app/gifts" },
+  { key: "circles", label: "Circles", href: "/app/circles" },
+  { key: "settings", label: "Settings", href: "/app/settings" },
 ] as const;

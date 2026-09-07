@@ -113,9 +113,9 @@ export async function confirmImport(
     if (dateError) reportError(dateError, { action: "confirmImport.insertDates" });
   }
 
-  revalidatePath("/people");
+  revalidatePath("/app/people");
   const ids = inserted.map((r) => r.id as string);
-  redirect(`/people/import/result?ids=${ids.join(",")}&count=${ids.length}`);
+  redirect(`/app/people/import/result?ids=${ids.join(",")}&count=${ids.length}`);
 }
 
 /** Deletes exactly the people a specific import just created — the
@@ -134,6 +134,6 @@ export async function undoImport(personIds: string[]): Promise<void> {
     return;
   }
 
-  revalidatePath("/people");
-  redirect("/people");
+  revalidatePath("/app/people");
+  redirect("/app/people");
 }

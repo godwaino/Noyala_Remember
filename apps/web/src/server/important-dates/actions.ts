@@ -62,8 +62,8 @@ export async function createImportantDate(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 export async function updateImportantDate(
@@ -109,8 +109,8 @@ export async function updateImportantDate(
 
   await cancelScheduledDeliveries(dateId);
 
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 /**
@@ -136,5 +136,5 @@ export async function deleteImportantDate(personId: string, dateId: string): Pro
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("important_dates").delete().eq("id", dateId);
   if (error) reportError(error, { action: "deleteImportantDate", dateId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }

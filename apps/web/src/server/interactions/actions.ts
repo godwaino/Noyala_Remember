@@ -45,15 +45,15 @@ export async function logInteraction(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   revalidatePath("/");
-  redirect(`/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 export async function deleteInteraction(personId: string, interactionId: string): Promise<void> {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("interactions").delete().eq("id", interactionId);
   if (error) reportError(error, { action: "deleteInteraction", interactionId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   revalidatePath("/");
 }

@@ -16,7 +16,7 @@ const bodySchema = z.object({
 });
 
 /**
- * apps/mobile's equivalent of the `/people/[personId]/drafts/new` server
+ * apps/mobile's equivalent of the `/app/people/[personId]/drafts/new` server
  * action — generation needs the AI provider key and the per-user rate
  * limiter, both server-only, so this is the one Message Studio step that
  * can't be a direct Supabase call from the phone. Bearer-token

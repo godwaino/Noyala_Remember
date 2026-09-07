@@ -51,8 +51,8 @@ export async function createMemory(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 export async function updateMemory(
@@ -82,8 +82,8 @@ export async function updateMemory(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 export async function archiveMemory(personId: string, memoryId: string): Promise<void> {
@@ -93,5 +93,5 @@ export async function archiveMemory(personId: string, memoryId: string): Promise
     .update({ archived_at: new Date().toISOString() })
     .eq("id", memoryId);
   if (error) reportError(error, { action: "archiveMemory", memoryId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }

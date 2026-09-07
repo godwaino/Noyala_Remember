@@ -58,8 +58,8 @@ export async function generateMessageDraft(
     return { status: "error", message: result.message };
   }
 
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}/drafts/${result.batchId}`);
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}/drafts/${result.batchId}`);
 }
 
 export async function updateMessageDraftContent(
@@ -78,7 +78,7 @@ export async function updateMessageDraftContent(
     .eq("id", draftId);
   if (error) reportError(error, { action: "updateMessageDraftContent", draftId });
 
-  revalidatePath(`/people/${personId}/drafts/${batchId}`);
+  revalidatePath(`/app/people/${personId}/drafts/${batchId}`);
 }
 
 /**
@@ -122,6 +122,6 @@ export async function recordMessageAction(
     return;
   }
 
-  revalidatePath(`/people/${personId}/drafts/${batchId}`);
-  revalidatePath("/drafts");
+  revalidatePath(`/app/people/${personId}/drafts/${batchId}`);
+  revalidatePath("/app/drafts");
 }

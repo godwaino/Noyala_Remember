@@ -40,7 +40,7 @@ export default async function DraftBatchPage({
 
   return (
     <div>
-      <Link href={`/people/${personId}`} className="text-primary text-sm">
+      <Link href={`/app/people/${personId}`} className="text-primary text-sm">
         &larr; Back to {person.firstName}
       </Link>
       <h1 className="text-ink mt-2 text-xl font-semibold">Message options</h1>
@@ -80,7 +80,7 @@ export default async function DraftBatchPage({
       </div>
 
       <Link
-        href={`/people/${personId}/drafts/new?regenerate=${batchId}`}
+        href={`/app/people/${personId}/drafts/new?regenerate=${batchId}`}
         className="text-primary mt-6 inline-block text-sm"
       >
         Regenerate with different wording

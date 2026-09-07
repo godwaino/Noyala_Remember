@@ -68,7 +68,7 @@ export default async function HomePage() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Home</h1>
         <Link
-          href="/people/new"
+          href="/app/people/new"
           className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
         >
           Add person
@@ -106,7 +106,7 @@ export default async function HomePage() {
             {reconnectSuggestions.map(({ person, daysSinceLastInteraction }) => (
               <li key={person.id} className="flex items-center justify-between gap-4 p-4">
                 <div>
-                  <Link href={`/people/${person.id}`} className="text-ink text-sm font-medium hover:underline">
+                  <Link href={`/app/people/${person.id}`} className="text-ink text-sm font-medium hover:underline">
                     {person.firstName}
                   </Link>
                   <p className="text-ink-muted text-xs">
@@ -140,7 +140,7 @@ export default async function HomePage() {
                 <div>
                   <p className="text-ink text-sm">{followUp.description}</p>
                   <p className="text-ink-muted text-xs">
-                    <Link href={`/people/${followUp.personId}`} className="hover:underline">
+                    <Link href={`/app/people/${followUp.personId}`} className="hover:underline">
                       {personFirstName}
                     </Link>
                     {followUp.dueAt

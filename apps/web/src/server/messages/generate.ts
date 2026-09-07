@@ -36,7 +36,7 @@ export type GenerateDraftsResult =
 
 /**
  * The actual generation + rate-limit + insert logic, shared by the
- * `/people/[personId]/drafts/new` server action (apps/web/src/server/messages/actions.ts)
+ * `/app/people/[personId]/drafts/new` server action (apps/web/src/server/messages/actions.ts)
  * and the mobile-facing route handler
  * (apps/web/src/app/api/mobile/message-drafts/route.ts) — extracted so
  * apps/mobile doesn't need its own copy of anything that touches the AI

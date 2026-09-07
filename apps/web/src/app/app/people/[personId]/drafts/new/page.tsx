@@ -53,7 +53,7 @@ export default async function MessageStudioPage({
 
   return (
     <div>
-      <Link href={`/people/${personId}`} className="text-primary text-sm">
+      <Link href={`/app/people/${personId}`} className="text-primary text-sm">
         &larr; Back to {person.firstName}
       </Link>
       <h1 className="text-ink mt-2 text-xl font-semibold">

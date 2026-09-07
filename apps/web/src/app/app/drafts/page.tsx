@@ -45,7 +45,7 @@ export default async function DraftsPage() {
               <li key={entry.id} className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-ink text-sm font-medium">
-                    <Link href={`/people/${entry.personId}`} className="hover:underline">
+                    <Link href={`/app/people/${entry.personId}`} className="hover:underline">
                       {entry.personFirstName}
                     </Link>
                   </p>
