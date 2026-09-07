@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NoyalaLogo } from "@/components/marketing/NoyalaLogo";
 
 /** "Design notes" is deliberately not linked here — the design handoff's
  * README says not to ship that page publicly; it exists as an
@@ -37,9 +38,11 @@ export function MarketingFooter() {
       <div className="mx-auto w-full max-w-[1080px] px-5 py-12 sm:px-10 sm:py-16">
         <div className="mb-12 grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
           <div>
-            <p className="font-marketing-serif text-marketing-ink mb-3 text-[22px] leading-none">
-              Noyala
-            </p>
+            <NoyalaLogo
+              markSize={28}
+              className="text-marketing-ink mb-3"
+              wordmarkClassName="text-[22px]"
+            />
             <p className="text-marketing-grey max-w-[26em] text-[14.5px] leading-[1.7]">
               Designed for thoughtful relationships, with privacy and human judgement at its centre.
             </p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NoyalaLogo } from "@/components/marketing/NoyalaLogo";
 
 /** "Account" lives with the CTA on the right, not in the main nav — it is a
  * destination for people who already have Noyala, not part of the pitch. */
@@ -37,10 +38,11 @@ export function MarketingHeader() {
       <div className="mx-auto flex max-w-[1080px] flex-nowrap items-center gap-3 px-5 py-3 sm:gap-6 sm:px-10">
         <Link
           href="/"
-          className={`font-marketing-serif text-marketing-ink hover:text-marketing-clay-text flex-none text-[22px] leading-none tracking-[0.01em] no-underline transition-colors ${FOCUS}`}
+          aria-label="Noyala — home"
+          className={`text-marketing-ink hover:text-marketing-clay-text flex-none no-underline transition-colors ${FOCUS}`}
           onClick={() => setMenuOpen(false)}
         >
-          Noyala
+          <NoyalaLogo markSize={30} wordmarkClassName="text-[22px] tracking-[0.01em]" />
         </Link>
 
         <nav aria-label="Main" className="navwide:flex hidden min-w-0 flex-1 items-center gap-5 xl:gap-7">
