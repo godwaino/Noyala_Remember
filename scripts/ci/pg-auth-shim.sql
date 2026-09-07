@@ -43,3 +43,46 @@ begin
 end $$;
 
 grant usage on schema public, auth to anon, authenticated, service_role;
+
+-- Added for Stage 7: 20260906000200_voice_captures_storage_bucket.sql
+-- creates a bucket and RLS policies in Supabase's `storage` schema, which
+-- the plain `postgres` service container in .github/workflows/ci.yml does
+-- not provide. Without this the migrations job aborts on that file, so
+-- every migration ordered after it — and any new one added to this
+-- directory — is never applied or checked at all.
+--
+-- Mirrors only the shape that migration depends on (buckets, objects,
+-- foldername), not the rest of Supabase Storage. Same caveat as the auth
+-- shim above: a lighter-weight CI stand-in, not a replacement for
+-- verification against a real project.
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null,
+  public boolean not null default false
+);
+
+create table if not exists storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets (id),
+  name text,
+  owner uuid
+);
+
+alter table storage.objects enable row level security;
+
+-- Supabase's helper: splits an object path into its folder segments so a
+-- policy can scope by `(storage.foldername(name))[1]`.
+create or replace function storage.foldername(name text) returns text[]
+  language plpgsql immutable
+  as $$
+  declare
+    parts text[];
+  begin
+    parts := string_to_array(name, '/');
+    return parts[1:array_length(parts, 1) - 1];
+  end
+  $$;
+
+grant usage on schema storage to anon, authenticated, service_role;
