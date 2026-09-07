@@ -30,36 +30,44 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
 
 export function MarketingFooter() {
   return (
-    <footer className="border-marketing-hairline bg-marketing-paper mt-16 border-t sm:mt-20">
-      <div className="mx-auto max-w-[1080px] px-5 py-9 sm:px-10 sm:py-14">
-        <div className="mb-9 flex flex-wrap gap-9 sm:gap-14">
-          <div className="flex-1 basis-[260px]">
-            <p className="font-marketing-serif text-marketing-ink mb-3 text-[22px] leading-none">Noyala</p>
+    <footer className="border-marketing-hairline bg-marketing-paper border-t">
+      {/* The columns sit on a real grid rather than three floated
+          `basis-[150px]` boxes, so they line up at every width instead of
+          drifting apart as the row rewraps. */}
+      <div className="mx-auto w-full max-w-[1080px] px-5 py-12 sm:px-10 sm:py-16">
+        <div className="mb-12 grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+          <div>
+            <p className="font-marketing-serif text-marketing-ink mb-3 text-[22px] leading-none">
+              Noyala
+            </p>
             <p className="text-marketing-grey max-w-[26em] text-[14.5px] leading-[1.7]">
               Designed for thoughtful relationships, with privacy and human judgement at its centre.
             </p>
           </div>
           {COLUMNS.map((col) => (
-            <div key={col.title} className="flex-none basis-[150px]">
-              <p className="text-marketing-grey mb-3.5 text-[12.5px] font-semibold uppercase tracking-[0.09em]">
+            <nav key={col.title} aria-label={col.title}>
+              <p className="text-marketing-grey mb-4 text-[12.5px] font-semibold uppercase tracking-[0.09em]">
                 {col.title}
               </p>
-              <div className="grid justify-items-start gap-2.5">
+              <ul className="grid list-none justify-items-start gap-3 p-0">
                 {col.links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-marketing-ink min-h-7 text-left text-[14.5px] no-underline"
-                  >
-                    {link.label}
-                  </Link>
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-marketing-body hover:text-marketing-clay-text inline-flex min-h-7 items-center text-left text-[14.5px] no-underline transition-colors focus-visible:rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marketing-clay"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
                 ))}
-              </div>
-            </div>
+              </ul>
+            </nav>
           ))}
         </div>
         <div className="border-marketing-hairline flex flex-wrap justify-between gap-4 border-t pt-5.5">
-          <p className="text-marketing-grey text-[13.5px]">© 2026 Noyala. No advertising, no data sales.</p>
+          <p className="text-marketing-grey text-[13.5px]">
+            © 2026 Noyala. No advertising, no data sales.
+          </p>
           <p className="text-marketing-grey text-[13.5px]">App Store and Google Play</p>
         </div>
       </div>

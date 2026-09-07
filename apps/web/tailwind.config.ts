@@ -43,6 +43,16 @@ const config: Config = {
         "marketing-disabled": webTokens.color.disabled,
         "marketing-placeholder-border": webTokens.color.placeholderBorder,
       },
+      spacing: {
+        // Half-steps the marketing design specifies (18px/22px/26px/30px)
+        // that Tailwind's default scale stops short of — without these the
+        // `p-4.5`/`mb-5.5`/`mb-6.5`/`px-7.5` classes used across
+        // apps/web/src/app/(marketing) compile to nothing at all.
+        "4.5": "1.125rem",
+        "5.5": "1.375rem",
+        "6.5": "1.625rem",
+        "7.5": "1.875rem",
+      },
       borderRadius: {
         sm: tokens.radius.sm,
         md: tokens.radius.md,

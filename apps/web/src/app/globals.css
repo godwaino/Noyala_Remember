@@ -35,3 +35,23 @@
     transform: rotate(360deg);
   }
 }
+
+/*
+ * Marketing site (apps/web/src/app/(marketing)) prose links. Tailwind's
+ * preflight resets anchors to `color: inherit; text-decoration: inherit`,
+ * which left inline links inside body copy — e.g. "Manage your account" on
+ * /download — visually indistinguishable from the sentence around them.
+ * Scoped to the marketing shell so `/app/*` is untouched, and low enough in
+ * specificity that the site's own `no-underline` button/nav classes still win.
+ */
+.noy-marketing a:not([class*="no-underline"]) {
+  color: theme("colors.marketing-action");
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color 150ms ease-out;
+}
+
+.noy-marketing a:not([class*="no-underline"]):hover {
+  color: theme("colors.marketing-action-hover");
+}
