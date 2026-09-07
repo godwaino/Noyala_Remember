@@ -68,8 +68,8 @@ export async function createPerson(
     return { status: "error", message: error?.message ?? "Could not save this person." };
   }
 
-  revalidatePath("/people");
-  redirect(`/people/${data.id}`);
+  revalidatePath("/app/people");
+  redirect(`/app/people/${data.id}`);
 }
 
 export async function updatePerson(
@@ -105,9 +105,9 @@ export async function updatePerson(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath("/people");
-  revalidatePath(`/people/${personId}`);
-  redirect(`/people/${personId}`);
+  revalidatePath("/app/people");
+  revalidatePath(`/app/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 export async function archivePerson(personId: string): Promise<void> {
@@ -117,8 +117,8 @@ export async function archivePerson(personId: string): Promise<void> {
     .update({ archived_at: new Date().toISOString() })
     .eq("id", personId);
   if (error) reportError(error, { action: "archivePerson", personId });
-  revalidatePath("/people");
-  revalidatePath(`/people/${personId}`);
+  revalidatePath("/app/people");
+  revalidatePath(`/app/people/${personId}`);
 }
 
 export async function restorePerson(personId: string): Promise<void> {
@@ -128,8 +128,8 @@ export async function restorePerson(personId: string): Promise<void> {
     .update({ archived_at: null })
     .eq("id", personId);
   if (error) reportError(error, { action: "restorePerson", personId });
-  revalidatePath("/people");
-  revalidatePath(`/people/${personId}`);
+  revalidatePath("/app/people");
+  revalidatePath(`/app/people/${personId}`);
 }
 
 /** Snooze control for reconnect suggestions (Master Build Prompt §4).
@@ -153,6 +153,6 @@ export async function deletePerson(personId: string): Promise<void> {
     reportError(error, { action: "deletePerson", personId });
     return;
   }
-  revalidatePath("/people");
-  redirect("/people");
+  revalidatePath("/app/people");
+  redirect("/app/people");
 }

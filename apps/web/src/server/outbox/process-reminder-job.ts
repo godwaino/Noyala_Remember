@@ -110,7 +110,7 @@ export async function processReminderJob(
       subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       title: subject,
       body,
-      url: `/people/${date.person_id}`,
+      url: `/app/people/${date.person_id}`,
     });
 
     if (result.delivered) {

@@ -26,7 +26,7 @@ export function UpcomingDateGroups({ dates }: { dates: ResolvedUpcomingDate[] })
               .filter((d) => d.bucket === group.bucket)
               .map((d) => (
                 <li key={d.date.id} className="p-3">
-                  <Link href={`/people/${d.date.personId}`} className="flex items-center justify-between gap-4">
+                  <Link href={`/app/people/${d.date.personId}`} className="flex items-center justify-between gap-4">
                     <span className="text-ink text-sm font-medium">
                       {d.date.label} — {d.personFirstName}
                     </span>

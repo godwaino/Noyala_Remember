@@ -30,7 +30,7 @@ export default async function ImportResultPage({
       </p>
       <div className="mt-6 flex gap-3">
         <Link
-          href="/people"
+          href="/app/people"
           className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
         >
           Go to People

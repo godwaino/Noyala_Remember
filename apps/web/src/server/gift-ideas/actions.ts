@@ -59,7 +59,7 @@ export async function createGiftIdea(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   return { status: "idle" };
 }
 
@@ -92,12 +92,12 @@ export async function advanceGiftIdea(
 
   const { error } = await supabase.from("gift_ideas").update(update).eq("id", giftIdeaId);
   if (error) reportError(error, { action: "advanceGiftIdea", giftIdeaId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }
 
 export async function deleteGiftIdea(personId: string, giftIdeaId: string): Promise<void> {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("gift_ideas").delete().eq("id", giftIdeaId);
   if (error) reportError(error, { action: "deleteGiftIdea", giftIdeaId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }

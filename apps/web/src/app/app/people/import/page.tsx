@@ -25,7 +25,7 @@ export default async function ImportPeoplePage() {
 
   return (
     <div>
-      <Link href="/people" className="text-primary text-sm">
+      <Link href="/app/people" className="text-primary text-sm">
         &larr; Back to People
       </Link>
       <h1 className="text-ink mt-2 text-xl font-semibold">Import people</h1>

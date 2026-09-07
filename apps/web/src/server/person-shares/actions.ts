@@ -48,7 +48,7 @@ export async function sharePersonWithCircle(
     return { status: "error", message };
   }
 
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   return { status: "idle" };
 }
 
@@ -63,7 +63,7 @@ export async function updateShareFlags(
     .update({ share_memories: flags.shareMemories, share_gift_planning: flags.shareGiftPlanning })
     .eq("id", shareId);
   if (error) reportError(error, { action: "updateShareFlags", shareId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }
 
 export async function revokeShare(shareId: string, personId: string): Promise<void> {
@@ -73,5 +73,5 @@ export async function revokeShare(shareId: string, personId: string): Promise<vo
     .update({ revoked_at: new Date().toISOString() })
     .eq("id", shareId);
   if (error) reportError(error, { action: "revokeShare", shareId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
 }

@@ -43,9 +43,9 @@ export async function createFollowUp(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   revalidatePath("/");
-  redirect(`/people/${personId}`);
+  redirect(`/app/people/${personId}`);
 }
 
 async function setFollowUpStatus(
@@ -56,7 +56,7 @@ async function setFollowUpStatus(
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("follow_ups").update({ status }).eq("id", followUpId);
   if (error) reportError(error, { action: `followUp.${status}`, followUpId });
-  revalidatePath(`/people/${personId}`);
+  revalidatePath(`/app/people/${personId}`);
   revalidatePath("/");
 }
 

@@ -35,13 +35,13 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
         <h1 className="text-xl font-semibold">People</h1>
         <div className="flex gap-2">
           <Link
-            href="/people/import"
+            href="/app/people/import"
             className="border-border rounded-md border px-4 py-2 text-sm font-medium"
           >
             Import
           </Link>
           <Link
-            href="/people/new"
+            href="/app/people/new"
             className="bg-primary text-surface rounded-md px-4 py-2 text-sm font-medium"
           >
             Add person
@@ -107,7 +107,7 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
           <ul className="border-border divide-border divide-y rounded-lg border">
             {people.map((person) => (
               <li key={person.id} className="flex items-center justify-between gap-4 p-4">
-                <Link href={`/people/${person.id}`} className="min-w-0 flex-1">
+                <Link href={`/app/people/${person.id}`} className="min-w-0 flex-1">
                   <p className="text-ink truncate font-medium">
                     {person.firstName} {person.lastName ?? ""}
                     {person.archivedAt ? (

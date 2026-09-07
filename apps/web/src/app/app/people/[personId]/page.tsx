@@ -112,13 +112,13 @@ export default async function PersonDetailPage({
         {isOwner ? (
           <div className="flex shrink-0 gap-2">
             <Link
-              href={`/people/${person.id}/drafts/new`}
+              href={`/app/people/${person.id}/drafts/new`}
               className="bg-primary text-surface rounded-md px-3 py-1.5 text-sm font-medium"
             >
               Write a message
             </Link>
             <Link
-              href={`/people/${person.id}/edit`}
+              href={`/app/people/${person.id}/edit`}
               className="border-border rounded-md border px-3 py-1.5 text-sm font-medium"
             >
               Edit
@@ -157,7 +157,7 @@ export default async function PersonDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-ink font-semibold">Important dates</h2>
           {isOwner ? (
-            <Link href={`/people/${person.id}/dates/new`} className="text-primary text-sm">
+            <Link href={`/app/people/${person.id}/dates/new`} className="text-primary text-sm">
               Add date
             </Link>
           ) : null}
@@ -183,7 +183,7 @@ export default async function PersonDetailPage({
                   {isOwner ? (
                     <div className="flex shrink-0 gap-2">
                       <Link
-                        href={`/people/${person.id}/dates/${date.id}/edit`}
+                        href={`/app/people/${person.id}/dates/${date.id}/edit`}
                         aria-label={`Edit ${date.label}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
@@ -211,7 +211,7 @@ export default async function PersonDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-ink font-semibold">Memories</h2>
           {isOwner ? (
-            <Link href={`/people/${person.id}/memories/new`} className="text-primary text-sm">
+            <Link href={`/app/people/${person.id}/memories/new`} className="text-primary text-sm">
               Add memory
             </Link>
           ) : null}
@@ -237,7 +237,7 @@ export default async function PersonDetailPage({
                   {isOwner ? (
                     <div className="flex shrink-0 gap-2">
                       <Link
-                        href={`/people/${person.id}/memories/${memory.id}/edit`}
+                        href={`/app/people/${person.id}/memories/${memory.id}/edit`}
                         aria-label={`Edit memory: ${memory.content}`}
                         className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                       >
@@ -354,7 +354,7 @@ export default async function PersonDetailPage({
       <section className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-ink font-semibold">Recent messages</h2>
-          <Link href={`/people/${person.id}/drafts/new`} className="text-primary text-sm">
+          <Link href={`/app/people/${person.id}/drafts/new`} className="text-primary text-sm">
             Write a message
           </Link>
         </div>
@@ -376,7 +376,7 @@ export default async function PersonDetailPage({
                     </p>
                   </div>
                   <Link
-                    href={`/people/${person.id}/drafts/${batch.batchId}`}
+                    href={`/app/people/${person.id}/drafts/${batch.batchId}`}
                     aria-label={`View message options for ${batch.occasion}`}
                     className="border-border rounded-md border px-3 py-1.5 text-xs font-medium"
                   >
@@ -530,7 +530,7 @@ export default async function PersonDetailPage({
         ) : (
           <p className="text-ink-muted mt-3 text-sm">
             You need to own or organise a circle before you can share someone into it. See{" "}
-            <Link href="/circles" className="text-primary underline">
+            <Link href="/app/circles" className="text-primary underline">
               Circles
             </Link>
             .

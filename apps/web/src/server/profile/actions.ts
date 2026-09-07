@@ -55,6 +55,6 @@ export async function updateNotificationPreferences(
     return { status: "error", message: error.message };
   }
 
-  revalidatePath("/settings");
+  revalidatePath("/app/settings");
   return { status: "success", message: "Preferences saved." };
 }

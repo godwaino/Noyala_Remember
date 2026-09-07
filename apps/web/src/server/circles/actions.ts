@@ -53,8 +53,8 @@ export async function createCircle(
     reportError(memberError, { action: "createCircle.ownerMembership", circleId: circle.id });
   }
 
-  revalidatePath("/circles");
-  redirect(`/circles/${circle.id}`);
+  revalidatePath("/app/circles");
+  redirect(`/app/circles/${circle.id}`);
 }
 
 export async function inviteToCircle(
@@ -93,7 +93,7 @@ export async function inviteToCircle(
     return { status: "error", message };
   }
 
-  revalidatePath(`/circles/${circleId}`);
+  revalidatePath(`/app/circles/${circleId}`);
   return { status: "idle" };
 }
 
@@ -104,7 +104,7 @@ export async function revokeInvitation(circleId: string, invitationId: string): 
     .update({ status: "revoked" })
     .eq("id", invitationId);
   if (error) reportError(error, { action: "revokeInvitation", invitationId });
-  revalidatePath(`/circles/${circleId}`);
+  revalidatePath(`/app/circles/${circleId}`);
 }
 
 export async function declineInvitation(invitationId: string): Promise<void> {
@@ -114,7 +114,7 @@ export async function declineInvitation(invitationId: string): Promise<void> {
     .update({ status: "declined" })
     .eq("id", invitationId);
   if (error) reportError(error, { action: "declineInvitation", invitationId });
-  revalidatePath("/circles");
+  revalidatePath("/app/circles");
 }
 
 export async function acceptInvitation(
@@ -127,7 +127,7 @@ export async function acceptInvitation(
     reportError(error, { action: "acceptInvitation" });
     return { status: "error", message: error.message };
   }
-  revalidatePath("/circles");
+  revalidatePath("/app/circles");
   return { status: "idle" };
 }
 
@@ -144,15 +144,15 @@ export async function leaveCircle(circleId: string): Promise<void> {
     .eq("circle_id", circleId)
     .eq("user_id", user.id);
   if (error) reportError(error, { action: "leaveCircle", circleId });
-  revalidatePath("/circles");
-  redirect("/circles");
+  revalidatePath("/app/circles");
+  redirect("/app/circles");
 }
 
 export async function removeMember(circleId: string, memberId: string): Promise<void> {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("circle_members").delete().eq("id", memberId);
   if (error) reportError(error, { action: "removeMember", circleId, memberId });
-  revalidatePath(`/circles/${circleId}`);
+  revalidatePath(`/app/circles/${circleId}`);
 }
 
 /** Self-identification for surprise-gift hiding: "this person record is
@@ -173,5 +173,5 @@ export async function setLinkedPerson(
     .eq("circle_id", circleId)
     .eq("user_id", user.id);
   if (error) reportError(error, { action: "setLinkedPerson", circleId });
-  revalidatePath(`/circles/${circleId}`);
+  revalidatePath(`/app/circles/${circleId}`);
 }
