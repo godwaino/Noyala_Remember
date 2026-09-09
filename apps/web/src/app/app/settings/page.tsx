@@ -4,12 +4,12 @@ import { unstable_rethrow } from "next/navigation";
 import { EmptyState } from "@/components/EmptyState";
 import { getSupabaseServerClient } from "@/server/supabase/server-client";
 import { reportError } from "@/server/observability/error-monitoring";
-import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 import { PushSubscribeButton } from "@/components/PushSubscribeButton";
 import { NotificationDeliveryList } from "@/components/NotificationDeliveryList";
 import { NotificationPreferencesForm } from "@/components/NotificationPreferencesForm";
 import { listNotificationDeliveries } from "@/server/notifications/queries";
 import { getProfile } from "@/server/profile/queries";
+import { getMyDeletionRequest } from "@/server/account/queries";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -57,9 +57,10 @@ export default async function SettingsPage() {
     );
   }
 
-  const [deliveries, profile] = await Promise.all([
+  const [deliveries, profile, deletionRequest] = await Promise.all([
     listNotificationDeliveries(supabase!),
     getProfile(supabase!),
+    getMyDeletionRequest(supabase!),
   ]);
 
   return (
@@ -124,11 +125,36 @@ export default async function SettingsPage() {
 
       <section className="border-border mt-10 border-t pt-6">
         <h2 className="text-danger font-semibold">Delete account</h2>
-        <p className="text-ink-muted mt-1 text-sm">
-          Permanently deletes your account and everything in it — people,
-          dates, memories and message history. This can&apos;t be undone.
-        </p>
-        <DeleteAccountForm />
+        {deletionRequest?.status === "pending" ? (
+          <>
+            <p className="text-ink-muted mt-1 text-sm">
+              Deletion is scheduled for{" "}
+              {new Date(deletionRequest.eraseAfter).toLocaleDateString(undefined, {
+                dateStyle: "long",
+              })}
+              . Everything still works until then.
+            </p>
+            <Link
+              href="/account/delete"
+              className="text-primary mt-3 inline-block text-sm underline"
+            >
+              Manage or cancel deletion
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-ink-muted mt-1 text-sm">
+              Schedules removal of your account and everything in it — people, dates, memories and
+              message history — after a 30-day recovery window.
+            </p>
+            <Link
+              href="/account/delete"
+              className="border-danger text-danger mt-3 inline-block rounded-md border px-4 py-2 text-sm font-medium"
+            >
+              Delete account
+            </Link>
+          </>
+        )}
       </section>
     </div>
   );

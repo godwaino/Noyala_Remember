@@ -11,7 +11,7 @@ import {
 const initialRequestState: RequestLoginCodeState = { status: "idle" };
 const initialVerifyState: VerifyLoginCodeState = { status: "idle" };
 
-export function LoginForm() {
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [requestState, requestAction, requestPending] = useActionState(
     requestLoginCode,
     initialRequestState,
@@ -34,6 +34,7 @@ export function LoginForm() {
     return (
       <form action={verifyAction} className="mt-6 flex flex-col gap-3">
         <input type="hidden" name="email" value={email} />
+        {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
         <p className="text-ink-muted text-sm">
           We sent a 6-digit code to <span className="text-ink font-medium">{email}</span>.
         </p>

@@ -131,6 +131,29 @@ export async function acceptInvitation(
   return { status: "idle" };
 }
 
+/**
+ * Companion to acceptInvitation for /invite/[token], which only ever has
+ * the token to hand (not the invitation's id, the way the /app/circles
+ * inbox does for declineInvitation above). RLS enforces both that the
+ * caller is signed in as the invited email and that the invitation is
+ * still pending — same as declineInvitation, just keyed by token.
+ */
+export async function declineInvitationByToken(
+  token: string,
+  _prevState: CircleFormState,
+): Promise<CircleFormState> {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("circle_invitations")
+    .update({ status: "declined", responded_at: new Date().toISOString() })
+    .eq("token", token);
+  if (error) {
+    reportError(error, { action: "declineInvitationByToken" });
+    return { status: "error", message: error.message };
+  }
+  return { status: "idle" };
+}
+
 export async function leaveCircle(circleId: string): Promise<void> {
   const supabase = await getSupabaseServerClient();
   const {

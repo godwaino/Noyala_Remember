@@ -4,14 +4,19 @@ import { getSupabaseServiceRoleClient } from "@/server/supabase/service-role-cli
 import { reportError } from "@/server/observability/error-monitoring";
 
 /**
- * Mobile equivalent of apps/web/src/server/account/actions.ts's
- * deleteAccount — regular users can't delete their own auth.users row
- * directly, so this needs the service-role client the same way the web
- * server action does. The confirmation step (typing DELETE / an in-app
- * dialog) happens client-side before this is ever called; this endpoint
- * itself just needs a valid session for the account being deleted.
- * Immediate and permanent — there is no 30-day grace period in this
- * schema (see apps/mobile/src/data/profile.ts's deleteAccount comment).
+ * Regular users can't delete their own auth.users row directly, so this
+ * needs the service-role client — same as the erasure half of the web
+ * flow (src/server/outbox/process-account-deletions.ts). The confirmation
+ * step (typing DELETE / an in-app dialog) happens client-side before this
+ * is ever called; this endpoint itself just needs a valid session for the
+ * account being deleted.
+ *
+ * Immediate and permanent, unlike the web flow: the schema does have a
+ * 30-day recoverable-deletion table now (account_deletion_requests, see
+ * supabase/migrations/20260907000100_account_deletion_requests.sql), but
+ * this endpoint predates it and hasn't been moved onto it — see
+ * apps/mobile/src/data/profile.ts's deleteAccount comment. Left as-is:
+ * changing the mobile app's delete flow wasn't in scope for that work.
  */
 export async function POST(request: Request) {
   const auth = await authenticateMobileRequest(request);

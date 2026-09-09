@@ -53,5 +53,10 @@ export async function completeOnboarding(
     return { status: "error", message: error.message };
   }
 
-  redirect("/");
+  // Not "/" — the 2026-09-07 web redesign made "/" the public marketing
+  // landing page and moved the signed-in product to /app (see
+  // src/app/(marketing)/layout.tsx). This redirect predates that split
+  // and was never updated, so it was dropping every freshly onboarded
+  // user back onto the marketing site instead of into the app.
+  redirect("/app");
 }
