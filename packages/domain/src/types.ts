@@ -259,6 +259,41 @@ export interface PersonShare {
   revokedAt: ISODateTime | null;
 }
 
+/** Derived state from public.get_circle_invitation_by_token, not the raw
+ * `circle_invitations.status` column — it also folds in expiry, which the
+ * column alone doesn't capture. See /invite/[token]. */
+export type CircleInvitationLookupState = "valid" | "expired" | "withdrawn" | "accepted" | "invalid";
+
+/** Deliberately narrower than CircleInvitation: only what a pre-auth
+ * visitor holding the link needs to see, never the inviter's identity or
+ * anything about other circle members. Every field but `state` is null
+ * when state is "invalid" (no matching token). */
+export interface CircleInvitationLookup {
+  state: CircleInvitationLookupState;
+  circleName: string | null;
+  invitedEmail: string | null;
+  role: Exclude<CircleRole, "owner"> | null;
+  expiresAt: ISODateTime | null;
+}
+
+/** Recoverable account deletion (web redesign, /account/delete). One row
+ * per user; see supabase/migrations/20260907000100_account_deletion_requests.sql
+ * for why there is no 'completed' status. */
+export type AccountDeletionStatus = "pending" | "cancelled";
+
+export interface AccountDeletionRequest {
+  userId: UUID;
+  status: AccountDeletionStatus;
+  reason: string | null;
+  requestedAt: ISODateTime;
+  /** Stored, not computed at read time — see the migration comment on this
+   * column for why. */
+  eraseAfter: ISODateTime;
+  cancelledAt: ISODateTime | null;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
 export type GiftIdeaStatus = "idea" | "planned" | "purchased" | "given";
 
 /** Stage 7: private voice capture and reviewed memory extraction. See
