@@ -72,11 +72,14 @@ export async function withdrawConsent(consentId: string): Promise<void> {
 /**
  * Regular users can't delete their own auth.users row directly — this
  * needs the Admin API with the service-role key, so it goes through
- * apps/web's bearer-token route (mirrors apps/web/src/server/account/actions.ts
- * exactly). Immediate and permanent, matching the web app's real
- * behaviour: there is no `deletion_requested_at` column or 30-day grace
- * period in this schema today, so this app's copy says so plainly rather
- * than promising a grace period the backend can't honour.
+ * apps/web's bearer-token route
+ * (apps/web/src/app/api/mobile/account/delete/route.ts). Immediate and
+ * permanent — unlike the web app's own account-deletion page, which now
+ * schedules a recoverable 30-day deletion instead of an immediate one
+ * (see account_deletion_requests in supabase/migrations). This endpoint
+ * predates that and hasn't been moved onto it, so this app's copy should
+ * keep saying deletion here is immediate rather than promising a grace
+ * period this path doesn't give.
  */
 export async function deleteAccount(): Promise<void> {
   await callMobileApi<{ ok: true }>("/api/mobile/account/delete");

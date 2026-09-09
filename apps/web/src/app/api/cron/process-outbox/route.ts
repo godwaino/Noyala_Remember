@@ -5,6 +5,7 @@ import { getSupabaseServiceRoleClient } from "@/server/supabase/service-role-cli
 import { createPostgresOutboxStore } from "@/server/outbox/postgres-outbox";
 import { processReminderJob, type ReminderJobPayload } from "@/server/outbox/process-reminder-job";
 import { purgeOldRecords } from "@/server/outbox/purge-old-records";
+import { processAccountDeletions } from "@/server/outbox/process-account-deletions";
 import { getEmailProvider } from "@/server/notifications/email-provider";
 import { getPushProvider } from "@/server/notifications/push-provider";
 import { logger } from "@/server/logger";
@@ -59,5 +60,15 @@ export async function GET(request: NextRequest) {
     logger.error("Retention purge failed", { error: message });
   }
 
-  return NextResponse.json({ processed, succeeded, failed, purged });
+  // Same piggyback rationale as purgeOldRecords above: cheap, idempotent,
+  // and once a day is exactly as often as a 30-day recovery window needs.
+  let accountDeletions = { erased: 0, failed: 0 };
+  try {
+    accountDeletions = await processAccountDeletions(serviceRole);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error("Account deletion processing failed", { error: message });
+  }
+
+  return NextResponse.json({ processed, succeeded, failed, purged, accountDeletions });
 }
