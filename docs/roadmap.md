@@ -205,13 +205,13 @@ fixed during that verification, not just during code review — see
   "gifting remains useful without a merchant integration," which it is;
   building an adapter with no real provider to integrate would be
   speculative scope.
-- Invitation **expiry** (the Master Build Prompt's exit-gate wording) is
-  implemented as explicit owner/organiser **revocation** rather than a
-  time-based TTL — there's no `expires_at` column. Revocation is verified
-  live (a revoked invitation's token can never be accepted, even mid-flight
-  after being fetched). A calendar-time expiry would be a small additive
-  migration (one nullable timestamp + one extra `accept_circle_invitation`
-  check) if wanted later.
+- Invitation **expiry** now exists as a real `expires_at` column (14 days
+  from creation, set at insert time) alongside the existing owner/organiser
+  **revocation** path — see
+  `supabase/migrations/20260909000100_circle_invitation_expiry_and_lookup.sql`.
+  Both are verified live: a revoked invitation's token can never be
+  accepted even mid-flight, and `get_circle_invitation_by_token` correctly
+  reports `expired` once `expires_at` has passed for a still-pending row.
 - Role **changes** are revoke-and-reinvite, not in-place editing — verified
   live that a direct `UPDATE circle_members SET role = ...` by anyone,
   including the owner, affects zero rows. `docs/permissions.md` records
@@ -285,6 +285,13 @@ and note that Stage 9's own hardening pass therefore has nothing to
 harden yet for billing, entitlements, or admin surfaces specifically —
 covered instead for every stage that *does* exist (0–7).
 
+Still true as of the web redesign (see "Web redesign" below): `/account`
+shows a real, honest plan section — everyone is on the free plan, because
+that's the only thing true — rather than a plan-switcher against tables
+that don't exist. That page is the natural place Stage 8 slots in once it
+happens; nothing there needs to change shape when it does, only to gain
+data to read.
+
 ## Stage 9 remaining work
 
 Security/RLS-performance hardening (a real role-self-escalation bug found
@@ -327,6 +334,61 @@ verified — see `docs/stage-reports/stage-9.md` for the full log.
   (Stage 7/8-adjacent in the last case) rather than something to build
   speculatively inside a hardening pass.
 
+## Web redesign (public marketing + account site)
+
+Not a Master Build Prompt stage — a 2026-09-07 restructuring of the
+public-facing web app: `/` became the marketing landing page, the
+signed-in product moved to `/app`, and nine pages were specified (see
+`docs/decisions` and the design handoff referenced from
+`(marketing)/design-notes/page.tsx`). Landing, download, pricing,
+privacy, support and design-notes shipped first; the remaining three —
+account, account/delete, and the public circle-invitation page — plus a
+recoverable (30-day) account-deletion flow to back the second of those,
+are done as of this entry:
+
+- **`/account`** — profile, plan (see the Stage 8 note above for why it's
+  deliberately not a plan-switcher), a pending-deletion banner, instant
+  CSV/vCard export links, and sign-out. No per-device session list: the
+  anon/authenticated API this app uses doesn't expose one (only the
+  service-role Admin API does, and only from a background context), so
+  this shows the signed-in email rather than a device list that would
+  have to be invented.
+- **`/account/delete`** — a four-step flow (re-verify via a 6-digit code
+  sent to the account's own email, review consequences, optional reason,
+  typed "DELETE" confirmation) backed by `account_deletion_requests`
+  (`supabase/migrations/20260907000100_account_deletion_requests.sql`)
+  and a daily-cron erasure job
+  (`src/server/outbox/process-account-deletions.ts`). Replaces the old
+  immediate `auth.admin.deleteUser` call outright, per an explicit
+  "replace it, don't keep both" decision — `DeleteAccountForm` and the
+  old `deleteAccount` action are gone; `/app/settings` now links to this
+  page instead.
+- **`/invite/[token]`** — public, pre-auth, backed by a new
+  `get_circle_invitation_by_token` SECURITY DEFINER function (no existing
+  circle_invitations RLS policy grants an anonymous visitor a direct
+  select) and a real `expires_at` column that didn't exist before (see
+  the Stage 6 note above, now resolved).
+
+**Genuinely open, not silently skipped:**
+
+- **Not end-to-end verified against a real Supabase project** — same
+  missing-service-role-key blocker as everything else in this list.
+  `processAccountDeletions` and the deletion request/cancel actions are
+  unit-tested with mocks; the migration and RLS policies (including the
+  new SECURITY DEFINER function) were verified against a local Postgres
+  running CI's own shim/migration/grants/smoke-test sequence, not the
+  real project.
+- **The mobile app's own delete flow was not moved onto the recoverable
+  model.** `apps/mobile`'s `/api/mobile/account/delete` still deletes
+  immediately; its own UI copy says so. Reconciling it was out of scope
+  here — see that route's and `apps/mobile/src/data/profile.ts`'s
+  comments, corrected for accuracy but not behaviour.
+- **No async export job.** The design mocks one (idle → gathering →
+  ready-with-a-24h-link → failed); `/account` instead reuses the four
+  existing synchronous CSV/vCard routes as instant downloads. Building
+  the storage-bucket-plus-signed-URL pipeline the design implies felt
+  like a separate, real feature rather than something to half-build here.
+
 ## Known blockers (do not silently skip; re-check each stage)
 
 - **Live Supabase project connected, but without its service-role key in
@@ -338,7 +400,7 @@ verified — see `docs/stage-reports/stage-9.md` for the full log.
   `apps/web/.env.local` (gitignored). `SUPABASE_SERVICE_ROLE_KEY` isn't
   exposed by the Supabase connection tool used to provision it, so
   service-role-only code (`createPostgresOutboxStore`, the two
-  `/api/cron/*` routes, `deleteAccount`) is unit-tested with mocks and
+  `/api/cron/*` routes, `processAccountDeletions`) is unit-tested with mocks and
   verified at the SQL level, but the actual Next.js route handlers
   couldn't be invoked end-to-end here. Whoever has that key next should
   add it and exercise those routes for real. A real user has since signed
