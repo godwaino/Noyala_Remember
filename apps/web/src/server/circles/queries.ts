@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Circle, CircleInvitation, CircleMember } from "@noyala/domain";
+import type { Circle, CircleInvitation, CircleInvitationLookup, CircleMember } from "@noyala/domain";
 import {
   toCircle,
   toCircleInvitation,
@@ -59,6 +59,41 @@ export async function getMyMembership(
     .maybeSingle();
   if (error) throw new Error(`Failed to load membership: ${error.message}`);
   return data ? toCircleMember(data as CircleMemberRow) : null;
+}
+
+interface InvitationLookupRow {
+  state: CircleInvitationLookup["state"];
+  circle_name: string | null;
+  invited_email: string | null;
+  role: CircleInvitationLookup["role"];
+  expires_at: string | null;
+}
+
+/**
+ * Pre-auth lookup for /invite/[token], backed by the SECURITY DEFINER
+ * function public.get_circle_invitation_by_token — no RLS policy grants an
+ * anonymous visitor a direct select on circle_invitations (every existing
+ * policy requires managing the circle or being signed in as the invitee),
+ * so this is the only path a visitor holding just the link has. Always
+ * returns exactly one row: `state: "invalid"` with every other field null
+ * when the token matches nothing, never a Postgrest 0-rows result.
+ */
+export async function getInvitationByToken(
+  client: SupabaseClient,
+  token: string,
+): Promise<CircleInvitationLookup> {
+  const { data, error } = await client
+    .rpc("get_circle_invitation_by_token", { invitation_token: token })
+    .single();
+  if (error) throw new Error(`Failed to look up invitation: ${error.message}`);
+  const row = data as InvitationLookupRow;
+  return {
+    state: row.state,
+    circleName: row.circle_name,
+    invitedEmail: row.invited_email,
+    role: row.role,
+    expiresAt: row.expires_at,
+  };
 }
 
 export async function listCircleInvitations(

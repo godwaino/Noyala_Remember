@@ -62,11 +62,20 @@ const verifySchema = z.object({
     .string()
     .trim()
     .regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+  redirectTo: z.string().trim().optional(),
 });
 
 export interface VerifyLoginCodeState {
   status: "idle" | "error";
   message?: string;
+}
+
+/** Only ever redirect somewhere inside this app: a single leading slash,
+ * never `//…` (a scheme-relative URL to another host). Anything else
+ * (missing, external, malformed) falls back to onboarding. */
+function safeRedirectTarget(raw: string | undefined): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/onboarding";
 }
 
 export async function verifyLoginCode(
@@ -76,6 +85,7 @@ export async function verifyLoginCode(
   const parsed = verifySchema.safeParse({
     email: formData.get("email"),
     token: formData.get("token"),
+    redirectTo: formData.get("redirectTo") || undefined,
   });
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message };
@@ -92,5 +102,9 @@ export async function verifyLoginCode(
     return { status: "error", message: error.message };
   }
 
-  redirect("/onboarding");
+  // Onboarding itself doesn't gate on whether it's already been completed
+  // (see (marketing)/onboarding/page.tsx), so a returning user with a
+  // deep link — e.g. from /invite/[token] — goes straight there instead
+  // of being routed through onboarding again.
+  redirect(safeRedirectTarget(parsed.data.redirectTo));
 }
